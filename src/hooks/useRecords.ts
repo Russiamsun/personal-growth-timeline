@@ -1,14 +1,17 @@
 import { create } from 'zustand';
 import { TimeRecord, YearStats, Mood, Photo, Theme, ThemeStats } from '@/types';
 import { sortByDate } from '@/utils/dateUtils';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import recordsData from '@/data/records.json';
 
 const STORAGE_KEY = 'time-records';
+const USE_SUPABASE_KEY = 'use-supabase';
 
 interface RecordsState {
   records: TimeRecord[];
   isLoading: boolean;
   error: string | null;
+  useSupabase: boolean;
 
   // Actions
   loadRecords: () => Promise<void>;
@@ -20,38 +23,112 @@ interface RecordsState {
   getAllThemes: () => Theme[];
   getAvailableYears: () => number[];
   searchRecords: (query: string) => TimeRecord[];
-  saveRecord: (record: Omit<TimeRecord, 'id' | 'createdAt' | 'updatedAt'>) => TimeRecord;
-  updateRecord: (id: string, updates: Partial<TimeRecord>) => TimeRecord | null;
-  deleteRecord: (id: string) => boolean;
+  saveRecord: (record: Omit<TimeRecord, 'id' | 'createdAt' | 'updatedAt'>) => Promise<TimeRecord>;
+  updateRecord: (id: string, updates: Partial<TimeRecord>) => Promise<TimeRecord | null>;
+  deleteRecord: (id: string) => Promise<boolean>;
+  switchDataSource: (useSupabase: boolean) => void;
 }
+
+// 辅助函数：生成唯一ID
+const generateId = () => `record-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// 辅助函数：将TimeRecord转换为Supabase格式
+const toSupabaseFormat = (record: TimeRecord) => ({
+  id: record.id,
+  title: record.title,
+  content: record.content,
+  recordDate: record.recordDate,
+  mood: record.mood,
+  theme: record.theme,
+  location: record.location,
+  tags: record.tags,
+  photos: JSON.stringify(record.photos),
+  year: record.year,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+});
+
+// 辅助函数：从Supabase格式转换为TimeRecord
+const fromSupabaseFormat = (data: any): TimeRecord => ({
+  id: data.id,
+  title: data.title,
+  content: data.content,
+  recordDate: data.recordDate,
+  mood: data.mood,
+  theme: data.theme,
+  location: data.location,
+  tags: data.tags || [],
+  photos: typeof data.photos === 'string' ? JSON.parse(data.photos) : data.photos || [],
+  year: data.year,
+  createdAt: data.createdAt,
+  updatedAt: data.updatedAt,
+});
 
 export const useRecords = create<RecordsState>((set, get) => ({
   records: [],
   isLoading: false,
   error: null,
+  useSupabase: isSupabaseConfigured(),
 
   loadRecords: async () => {
     set({ isLoading: true, error: null });
+    
+    // 检查Supabase配置是否有效，如果无效则强制使用localStorage
+    if (!isSupabaseConfigured()) {
+      set({ useSupabase: false });
+    }
+    
     try {
-      // 模拟异步加载
-      await new Promise(resolve => setTimeout(resolve, 100));
+      const { useSupabase } = get();
 
-      // 从 localStorage 加载数据
-      const storedRecords = localStorage.getItem(STORAGE_KEY);
+      if (useSupabase && isSupabaseConfigured()) {
+        // 从Supabase加载
+        const { data, error } = await supabase
+          .from('records')
+          .select('*')
+          .order('recordDate', { ascending: false });
 
-      if (storedRecords) {
-        // 如果 localStorage 有数据，使用 localStorage 的数据
-        const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
-        set({ records, isLoading: false });
+        if (error) {
+          // 仅在开发模式下输出警告
+          if (import.meta.env.DEV) {
+            console.warn('Supabase加载失败，将使用localStorage:', error.message);
+          }
+          // 不要抛出错误，fallback到localStorage
+          const storedRecords = localStorage.getItem(STORAGE_KEY);
+          if (storedRecords) {
+            const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
+            set({ records, isLoading: false, useSupabase: false });
+          } else {
+            const records = sortByDate(recordsData.records as TimeRecord[]);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            set({ records, isLoading: false, useSupabase: false });
+          }
+          return;
+        }
+
+        const records = (data || []).map(fromSupabaseFormat);
+        set({ records: sortByDate(records), isLoading: false });
       } else {
-        // 否则使用 JSON 文件作为初始数据
-        const records = sortByDate(recordsData.records as TimeRecord[]);
-        // 保存到 localStorage
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-        set({ records, isLoading: false });
+        // 从localStorage加载
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const storedRecords = localStorage.getItem(STORAGE_KEY);
+
+        if (storedRecords) {
+          const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
+          set({ records, isLoading: false });
+        } else {
+          // 使用JSON文件作为初始数据
+          const records = sortByDate(recordsData.records as TimeRecord[]);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+          set({ records, isLoading: false });
+        }
       }
-    } catch (error) {
-      set({ error: '加载记录失败', isLoading: false });
+    } catch (error: any) {
+      // 仅在开发模式下输出警告
+      if (import.meta.env.DEV) {
+        console.warn('加载记录失败:', error.message || error);
+      }
+      set({ error: error.message || '加载记录失败', isLoading: false });
     }
   },
 
@@ -73,10 +150,9 @@ export const useRecords = create<RecordsState>((set, get) => ({
   getYearStats: (year: number) => {
     const { records } = get();
     const yearRecords = records.filter(record => record.year === year);
-    
+
     if (yearRecords.length === 0) return null;
 
-    // 计算心情分布
     const moodCounts: Record<Mood, number> = {} as Record<Mood, number>;
     let totalMoods = 0;
 
@@ -93,7 +169,6 @@ export const useRecords = create<RecordsState>((set, get) => ({
       percentage: Math.round((count / totalMoods) * 100),
     }));
 
-    // 获取高频标签
     const tagCounts: Record<string, number> = {};
     yearRecords.forEach(record => {
       record.tags.forEach(tag => {
@@ -106,7 +181,6 @@ export const useRecords = create<RecordsState>((set, get) => ({
       .slice(0, 5)
       .map(([tag]) => tag);
 
-    // 精选照片（每条记录取第一张，最多4张）
     const featuredPhotos = yearRecords
       .filter(record => record.photos.length > 0)
       .slice(0, 4)
@@ -125,7 +199,6 @@ export const useRecords = create<RecordsState>((set, get) => ({
     const { records } = get();
     const themeMap = new Map<Theme, TimeRecord[]>();
 
-    // 按主题分组
     records.forEach(record => {
       if (record.theme) {
         const themeRecords = themeMap.get(record.theme) || [];
@@ -134,18 +207,13 @@ export const useRecords = create<RecordsState>((set, get) => ({
       }
     });
 
-    // 计算每个主题的统计信息
     const themeStats: ThemeStats[] = [];
     themeMap.forEach((themeRecords, theme) => {
-      // 按日期排序（从旧到新）
       const sortedRecords = sortByDate([...themeRecords], 'asc');
-
-      // 提取日期
       const dates = sortedRecords.map(r => r.recordDate);
       const startDate = dates[0];
       const endDate = dates[dates.length - 1];
 
-      // 精选照片（取每条记录的第一张，最多3张）
       const featuredPhotos: Photo[] = [];
       for (const record of sortedRecords) {
         if (record.photos.length > 0) {
@@ -182,7 +250,6 @@ export const useRecords = create<RecordsState>((set, get) => ({
   getAvailableYears: () => {
     const { records } = get();
     const years = [...new Set(records.map(record => record.year))];
-    // 从旧到新排序
     return years.sort((a, b) => a - b);
   },
 
@@ -198,12 +265,15 @@ export const useRecords = create<RecordsState>((set, get) => ({
     );
   },
 
-  // 保存新记录
-  saveRecord: (record: Omit<TimeRecord, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const { records } = get();
+  saveRecord: async (record: Omit<TimeRecord, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // 检查Supabase配置是否有效
+    if (!isSupabaseConfigured()) {
+      set({ useSupabase: false });
+    }
+    
+    const { records, useSupabase } = get();
 
-    // 生成唯一ID
-    const id = `record-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateId();
     const now = new Date().toISOString();
 
     const newRecord: TimeRecord = {
@@ -213,21 +283,51 @@ export const useRecords = create<RecordsState>((set, get) => ({
       updatedAt: now,
     };
 
-    // 添加到记录列表并按日期排序
-    const newRecords = sortByDate([newRecord, ...records]);
+    try {
+      if (useSupabase && isSupabaseConfigured()) {
+        // 保存到Supabase
+        const { error } = await supabase
+          .from('records')
+          .insert([toSupabaseFormat(newRecord)]);
 
-    // 保存到 localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+        if (error) {
+          // 仅在开发模式下输出警告，fallback到localStorage
+          if (import.meta.env.DEV) {
+            console.warn('Supabase保存失败，将使用localStorage:', error.message);
+          }
+          // fallback到localStorage
+          const newRecords = sortByDate([newRecord, ...records]);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+          set({ records: newRecords, useSupabase: false });
+          return newRecord;
+        }
 
-    // 更新状态
-    set({ records: newRecords });
+        // 重新加载记录
+        await get().loadRecords();
+      } else {
+        // 保存到localStorage
+        const newRecords = sortByDate([newRecord, ...records]);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+        set({ records: newRecords });
+      }
 
-    return newRecord;
+      return newRecord;
+    } catch (error: any) {
+      // 仅在开发模式下输出警告
+      if (import.meta.env.DEV) {
+        console.warn('保存记录失败:', error.message || error);
+      }
+      throw error;
+    }
   },
 
-  // 更新记录
-  updateRecord: (id: string, updates: Partial<TimeRecord>) => {
-    const { records } = get();
+  updateRecord: async (id: string, updates: Partial<TimeRecord>) => {
+    // 检查Supabase配置是否有效
+    if (!isSupabaseConfigured()) {
+      set({ useSupabase: false });
+    }
+    
+    const { records, useSupabase } = get();
 
     const index = records.findIndex(record => record.id === id);
     if (index === -1) {
@@ -240,43 +340,117 @@ export const useRecords = create<RecordsState>((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
 
-    // 更新记录列表
-    const newRecords = [...records];
-    newRecords[index] = updatedRecord;
+    try {
+      if (useSupabase && isSupabaseConfigured()) {
+        // 更新Supabase
+        const { error } = await supabase
+          .from('records')
+          .update({
+            ...updates,
+            updatedAt: updatedRecord.updatedAt,
+          })
+          .eq('id', id);
 
-    // 按日期重新排序
-    const sortedRecords = sortByDate(newRecords);
+        if (error) {
+          // 仅在开发模式下输出警告，fallback到localStorage
+          if (import.meta.env.DEV) {
+            console.warn('Supabase更新失败，将使用localStorage:', error.message);
+          }
+          // fallback到localStorage
+          const newRecords = [...records];
+          newRecords[index] = updatedRecord;
+          const sortedRecords = sortByDate(newRecords);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(sortedRecords));
+          set({ records: sortedRecords, useSupabase: false });
+          return updatedRecord;
+        }
 
-    // 保存到 localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sortedRecords));
-
-    // 更新状态
-    set({ records: sortedRecords });
-
-    return updatedRecord;
+        // 重新加载记录
+        await get().loadRecords();
+        return updatedRecord;
+      } else {
+        // 更新localStorage
+        const newRecords = [...records];
+        newRecords[index] = updatedRecord;
+        const sortedRecords = sortByDate(newRecords);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sortedRecords));
+        set({ records: sortedRecords });
+        return updatedRecord;
+      }
+    } catch (error: any) {
+      // 仅在开发模式下输出警告
+      if (import.meta.env.DEV) {
+        console.warn('更新记录失败:', error.message || error);
+      }
+      throw error;
+    }
   },
 
-  // 删除记录
-  deleteRecord: (id: string) => {
-    const { records } = get();
+  deleteRecord: async (id: string) => {
+    // 检查Supabase配置是否有效
+    if (!isSupabaseConfigured()) {
+      set({ useSupabase: false });
+    }
+    
+    const { records, useSupabase } = get();
 
     const index = records.findIndex(record => record.id === id);
     if (index === -1) {
       return false;
     }
 
-    // 过滤掉要删除的记录
-    const newRecords = records.filter(record => record.id !== id);
+    try {
+      if (useSupabase && isSupabaseConfigured()) {
+        // 从Supabase删除
+        const { error } = await supabase
+          .from('records')
+          .delete()
+          .eq('id', id);
 
-    // 保存到 localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+        if (error) {
+          // 仅在开发模式下输出警告，fallback到localStorage
+          if (import.meta.env.DEV) {
+            console.warn('Supabase删除失败，将使用localStorage:', error.message);
+          }
+          // fallback到localStorage
+          const newRecords = records.filter(record => record.id !== id);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+          set({ records: newRecords, useSupabase: false });
+          return true;
+        }
 
-    // 更新状态
-    set({ records: newRecords });
+        // 重新加载记录
+        await get().loadRecords();
+      } else {
+        // 从localStorage删除
+        const newRecords = records.filter(record => record.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+        set({ records: newRecords });
+      }
 
-    return true;
+      return true;
+    } catch (error: any) {
+      // 仅在开发模式下输出警告
+      if (import.meta.env.DEV) {
+        console.warn('删除记录失败:', error.message || error);
+      }
+      throw error;
+    }
+  },
+
+  switchDataSource: (useSupabase: boolean) => {
+    set({ useSupabase });
+    localStorage.setItem(USE_SUPABASE_KEY, String(useSupabase));
+    // 切换后重新加载记录
+    get().loadRecords();
   },
 }));
+
+// 初始化：检查是否使用Supabase
+const savedUseSupabase = localStorage.getItem(USE_SUPABASE_KEY);
+if (savedUseSupabase === 'true' && isSupabaseConfigured()) {
+  useRecords.setState({ useSupabase: true });
+}
 
 // 初始化加载记录
 useRecords.getState().loadRecords();

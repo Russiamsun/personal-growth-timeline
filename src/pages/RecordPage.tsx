@@ -10,7 +10,7 @@ import { ThemeConfig } from '@/types';
 export default function RecordPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { records, isLoading, loadRecords, getRecordById } = useRecords();
+  const { records, isLoading, loadRecords, getRecordById, deleteRecord } = useRecords();
 
   useEffect(() => {
     if (records.length === 0) {
@@ -19,6 +19,25 @@ export default function RecordPage() {
   }, [records.length, loadRecords]);
 
   const record = id ? getRecordById(id) : undefined;
+
+  // 删除处理函数
+  const handleDelete = async () => {
+    if (!record) return;
+
+    if (window.confirm('确定要删除这条记录吗？此操作无法撤销。')) {
+      try {
+        const success = await deleteRecord(record.id);
+        if (success) {
+          navigate('/');
+        } else {
+          alert('删除失败，请重试');
+        }
+      } catch (error: any) {
+        console.error('删除失败:', error);
+        alert(`删除失败: ${error.message || '请重试'}`);
+      }
+    }
+  };
 
   // 格式化日期为中文格式
   const formatDateChinese = (dateStr: string) => {
@@ -109,10 +128,15 @@ export default function RecordPage() {
               <Edit2 className="w-4 h-4" />
               编辑
             </motion.button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-red-500/50 transition-all">
+            <motion.button
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-red-500/50 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Trash2 className="w-4 h-4" />
               删除
-            </button>
+            </motion.button>
           </div>
         </div>
       </motion.div>

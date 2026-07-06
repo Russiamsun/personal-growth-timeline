@@ -5,6 +5,7 @@ import YearPage from '@/pages/YearPage';
 import RecordPage from '@/pages/RecordPage';
 import CreatePage from '@/pages/CreatePage';
 import EditPage from '@/pages/EditPage';
+import TimelinePage from '@/pages/TimelinePage';
 
 // 占位页面组件
 function ArticlesPage() {
@@ -12,17 +13,6 @@ function ArticlesPage() {
     <div className="min-h-screen pt-20 flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">文章页面</h1>
-        <p className="text-gray-600">功能开发中...</p>
-      </div>
-    </div>
-  );
-}
-
-function TimelinePage() {
-  return (
-    <div className="min-h-screen pt-20 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">时光轴页面</h1>
         <p className="text-gray-600">功能开发中...</p>
       </div>
     </div>

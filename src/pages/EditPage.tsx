@@ -30,8 +30,8 @@ export default function EditPage() {
     setIsSubmitting(true);
 
     try {
-      // 更新记录
-      const updatedRecord = updateRecord(id, {
+      // 更新记录（异步）
+      const updatedRecord = await updateRecord(id, {
         ...data,
         updatedAt: new Date().toISOString(),
       });
@@ -45,8 +45,9 @@ export default function EditPage() {
 
       // 跳转到详情页
       navigate(`/record/${updatedRecord.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('更新失败:', error);
+      alert(`更新失败: ${error.message || '请重试'}`);
       setIsSubmitting(false);
     }
   };

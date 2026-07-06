@@ -15,16 +15,17 @@ export default function CreatePage() {
     setIsSubmitting(true);
 
     try {
-      // 保存记录
-      const newRecord = saveRecord(data);
+      // 保存记录（异步）
+      const newRecord = await saveRecord(data);
 
       // 显示成功提示
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // 跳转到详情页
       navigate(`/record/${newRecord.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('保存失败:', error);
+      alert(`保存失败: ${error.message || '请重试'}`);
       setIsSubmitting(false);
     }
   };
