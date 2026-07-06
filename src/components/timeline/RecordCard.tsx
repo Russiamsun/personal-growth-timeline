@@ -4,6 +4,7 @@ import { MapPin, Clock, Camera, ArrowRight } from 'lucide-react';
 import { TimeRecord, ThemeConfig } from '@/types';
 import { MoodIcon } from '@/components/record/MoodIcon';
 import { cn } from '@/lib/utils';
+import { generatePlaceholder } from '@/utils/placeholder';
 
 interface RecordCardProps {
   record: TimeRecord;
@@ -48,7 +49,7 @@ export function RecordCard({ record, onClick, className }: RecordCardProps) {
       {record.photos.length > 0 && (
         <div className="relative h-48 overflow-hidden bg-gray-50">
           <img
-            src={thumbnailError ? '/placeholder.jpg' : record.photos[0].url}
+            src={thumbnailError ? generatePlaceholder(record.id, 800, 600) : record.photos[0].url}
             alt={record.title}
             className="w-full h-full object-cover"
             loading="lazy"

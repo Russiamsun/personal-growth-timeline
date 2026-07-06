@@ -4,11 +4,18 @@ import { motion } from 'framer-motion';
 import { Calendar, MapPin } from 'lucide-react';
 import { useRecords } from '@/hooks/useRecords';
 import { ThemeConfig, MoodIcons, TimeRecord } from '@/types';
+import { generatePlaceholder } from '@/utils/placeholder';
 
 export default function TimelinePage() {
   const navigate = useNavigate();
   const { records, isLoading, loadRecords } = useRecords();
   const [visibleRecords, setVisibleRecords] = useState<TimeRecord[]>([]);
+  const [failedPhotos, setFailedPhotos] = useState<Set<string>>(new Set());
+
+  // 处理图片加载失败
+  const handlePhotoError = (photoId: string) => {
+    setFailedPhotos(prev => new Set([...prev, photoId]));
+  };
 
   useEffect(() => {
     if (records.length === 0) {
@@ -118,9 +125,10 @@ export default function TimelinePage() {
               className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100"
             >
               <img
-                src={photo.url}
+                src={failedPhotos.has(photo.id) ? generatePlaceholder(photo.id, 200, 200) : photo.url}
                 alt={`照片${index + 1}`}
                 className="w-full h-full object-cover"
+                onError={() => handlePhotoError(photo.id)}
               />
             </div>
           ))}
