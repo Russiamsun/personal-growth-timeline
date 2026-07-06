@@ -55,7 +55,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Router>
+    <Router basename="/personal-growth-timeline">
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
