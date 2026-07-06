@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Lora", "Source Sans Pro", sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 全局样式 */
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-mint-50 via-coral-50 to-lavender-50;
+    @apply min-h-screen;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+    @apply text-warmgray-800;
+  }
+
+  p {
+    @apply font-body;
+    @apply text-warmgray-600;
+  }
+}
+
+/* 自定义组件样式 */
+@layer components {
+  .year-card {
+    @apply bg-white/80 backdrop-blur-sm;
+    @apply rounded-2xl shadow-card;
+    @apply p-6;
+    @apply hover:shadow-soft hover:-translate-y-2;
+    @apply transition-all duration-300;
+  }
+
+  .record-card {
+    @apply bg-white/90 backdrop-blur-sm;
+    @apply rounded-xl shadow-card;
+    @apply p-4;
+    @apply border border-warmgray-100;
+    @apply hover:shadow-soft hover:scale-105;
+    @apply transition-all duration-300;
+  }
+
+  .mood-badge {
+    @apply inline-flex items-center gap-2;
+    @apply px-3 py-1 rounded-capsule;
+    @apply text-sm font-medium;
+  }
+
+  .photo-grid {
+    @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+  }
+
+  .timeline-dot {
+    @apply w-4 h-4 rounded-full;
+    @apply bg-gradient-to-br from-mint-400 to-coral-400;
+    @apply shadow-glow;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-capsule;
+    @apply bg-gradient-to-r from-mint-400 to-coral-400;
+    @apply text-white font-semibold;
+    @apply shadow-soft hover:shadow-glow;
+    @apply hover:scale-105 active:scale-95;
+    @apply transition-all duration-300;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-capsule;
+    @apply bg-white border-2 border-mint-300;
+    @apply text-mint-600 font-semibold;
+    @apply hover:bg-mint-50 hover:border-mint-400;
+    @apply transition-all duration-300;
+  }
+}
+
+/* 渐变动画背景 */
+.gradient-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.2) 0%,
+    rgba(244, 63, 94, 0.2) 50%,
+    rgba(168, 85, 247, 0.2) 100%
+  );
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-warmgray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-br from-mint-400 to-coral-400;
+  @apply rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply from-mint-500 to-coral-500;
+}
