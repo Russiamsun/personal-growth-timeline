@@ -6,6 +6,8 @@ import recordsData from '@/data/records.json';
 
 const STORAGE_KEY = 'time-records';
 const USE_SUPABASE_KEY = 'use-supabase';
+const DATA_VERSION_KEY = 'data-version';
+const DATA_VERSION = '2025.07.07'; // 数据版本号，更新此值会重新初始化数据
 
 interface RecordsState {
   records: TimeRecord[];
@@ -94,13 +96,17 @@ export const useRecords = create<RecordsState>((set, get) => ({
             console.warn('Supabase加载失败，将使用localStorage:', error.message);
           }
           // 不要抛出错误，fallback到localStorage
+          const storedVersion = localStorage.getItem(DATA_VERSION_KEY);
           const storedRecords = localStorage.getItem(STORAGE_KEY);
-          if (storedRecords) {
-            const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
-            set({ records, isLoading: false, useSupabase: false });
-          } else {
+
+          // 检查数据版本，如果不匹配则重新初始化
+          if (storedVersion !== DATA_VERSION || !storedRecords) {
             const records = sortByDate(recordsData.records as TimeRecord[]);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+            localStorage.setItem(DATA_VERSION_KEY, DATA_VERSION);
+            set({ records, isLoading: false, useSupabase: false });
+          } else {
+            const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
             set({ records, isLoading: false, useSupabase: false });
           }
           return;
@@ -111,17 +117,20 @@ export const useRecords = create<RecordsState>((set, get) => ({
       } else {
         // 从localStorage加载
         await new Promise(resolve => setTimeout(resolve, 100));
+        const storedVersion = localStorage.getItem(DATA_VERSION_KEY);
         const storedRecords = localStorage.getItem(STORAGE_KEY);
 
-        if (storedRecords) {
-          const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
-          set({ records, isLoading: false });
-        } else {
-          // 使用JSON文件作为初始数据
+        // 检查数据版本，如果不匹配则重新初始化
+        if (storedVersion !== DATA_VERSION || !storedRecords) {
           const records = sortByDate(recordsData.records as TimeRecord[]);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+          localStorage.setItem(DATA_VERSION_KEY, DATA_VERSION);
           set({ records, isLoading: false });
+          return;
         }
+
+        const records = sortByDate(JSON.parse(storedRecords) as TimeRecord[]);
+        set({ records, isLoading: false });
       }
     } catch (error: any) {
       // 仅在开发模式下输出警告
