@@ -185,7 +185,7 @@ export default function Home() {
               className="group cursor-pointer"
               onClick={() => navigate(section.path)}
             >
-              <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${section.gradient} p-8 md:p-10 ${section.shadowColor} hover:${section.hoverShadow} transition-shadow duration-500`}>
+              <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${section.gradient} p-6 md:p-8 min-h-80 md:min-h-96 flex flex-col ${section.shadowColor} hover:${section.hoverShadow} transition-shadow duration-500`}>
                 {/* 粒子装饰 */}
                 {Array.from({ length: 6 }).map((_, i) => (
                   <motion.div
@@ -208,7 +208,7 @@ export default function Home() {
                 ))}
 
                 {/* 内容 */}
-                <div className="relative z-10">
+                <div className="relative z-10 flex flex-col h-full">
                   <motion.div
                     className="mb-4 inline-block"
                     animate={{ rotate: [0, 10, -10, 0] }}
@@ -217,21 +217,21 @@ export default function Home() {
                     <section.icon className="w-12 h-12 md:w-14 md:h-14 text-white drop-shadow-lg" />
                   </motion.div>
 
-                  <h4 className="text-xl md:text-2xl font-bold text-white mb-2 drop-shadow-md">
+                  <h4 className="text-xl md:text-2xl font-bold text-white mb-3 drop-shadow-md">
                     {section.title}
                   </h4>
 
-                  <p className="text-white/90 text-base mb-1">
+                  <p className="text-white/90 text-sm mb-2 leading-relaxed">
                     {section.subtitle}
                   </p>
 
-                  <p className="text-white/80 text-sm">
+                  <p className="text-white/80 text-xs leading-relaxed">
                     {section.description}
                   </p>
 
                   {/* Hover提示 */}
                   <motion.div
-                    className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="mt-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     initial={{ y: 10 }}
                     whileHover={{ y: 0 }}
                   >

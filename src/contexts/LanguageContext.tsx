@@ -315,7 +315,7 @@ const translations: Record<Language, TranslationStrings> = {
       viewMore: 'View More',
     },
     experiences: {
-      title: 'Real World Experiences',
+      title: 'Experiences',
       subtitle: 'Charity, Science Museums, City Exploration, AI Experience, Social Observation',
       createNew: 'Create New Activity',
       edit: 'Edit',
@@ -324,14 +324,14 @@ const translations: Record<Language, TranslationStrings> = {
       morePhotos: 'photos',
     },
     questions: {
-      title: 'Questions I\'m Thinking About',
+      title: 'Questions',
       subtitle: 'genuine curiosity - authentic wondering',
       createNew: 'Create New Question',
       edit: 'Edit',
       delete: 'Delete',
     },
     reflection: {
-      title: 'Reflection Journal',
+      title: 'Reflection',
       subtitle: 'Short authentic growth reflections',
       createNew: 'Create New Reflection',
       edit: 'Edit',

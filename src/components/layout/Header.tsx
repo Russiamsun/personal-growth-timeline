@@ -46,15 +46,15 @@ export function Header() {
           </motion.div>
 
           {/* 导航链接和语言切换 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    'relative px-3 py-2 rounded-lg transition-all duration-300',
-                    'flex items-center gap-2',
+                    'relative px-2 py-1.5 rounded-lg transition-all duration-300',
+                    'flex items-center gap-1.5',
                     isActive
                       ? 'text-purple-600 font-semibold bg-purple-50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -64,7 +64,7 @@ export function Header() {
                 {({ isActive }) => (
                   <>
                     <item.icon className="w-4 h-4" />
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-xs font-medium">{item.label}</span>
 
                     {/* 激活指示器 */}
                     {isActive && (
