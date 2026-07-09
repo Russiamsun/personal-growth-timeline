@@ -1,4 +1,4 @@
-import { TimeRecord } from '@/types';
+import { TimeRecord, Language } from '@/types';
 
 /**
  * 格式化日期显示
@@ -74,4 +74,20 @@ export function isToday(dateStr: string): boolean {
     date.getMonth() === today.getMonth() &&
     date.getDate() === today.getDate()
   );
+}
+
+/**
+ * 根据语言格式化日期显示（双语言支持）
+ * @param dateStr - YYYY-MM-DD 格式的日期字符串
+ * @param lang - 语言类型 ('zh' | 'en')
+ * @returns 格式化后的日期字符串
+ */
+export function formatDateByLang(dateStr: string, lang: Language): string {
+  const date = new Date(dateStr);
+  const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
+  return date.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }

@@ -4,6 +4,7 @@ import { X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { Photo } from '@/types';
 import { cn } from '@/lib/utils';
 import { generatePlaceholder } from '@/utils/placeholder';
+import { sanitizeImageUrl } from '@/utils/sanitize';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -75,7 +76,7 @@ export function PhotoGallery({ photos, className }: PhotoGalleryProps) {
             onClick={() => openPreview(index)}
           >
             <img
-              src={failedPhotos.has(photo.id) ? generatePlaceholder(photo.id, 400, 400) : photo.url}
+              src={failedPhotos.has(photo.id) ? generatePlaceholder(photo.id, 400, 400) : sanitizeImageUrl(photo.url)}
               alt={`照片 ${index + 1}`}
               className="w-full h-full object-cover"
               loading="lazy"

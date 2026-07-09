@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ImagePlus, X, GripVertical } from 'lucide-react';
 import { Photo } from '@/types';
 import { cn } from '@/lib/utils';
+import { sanitizeImageUrl } from '@/utils/sanitize';
+import { compressImage, isValidImageFile } from '@/utils/imageCompression';
 
 interface PhotoUploaderProps {
   photos: Photo[];
@@ -24,7 +26,6 @@ export function PhotoUploader({
 
   // 支持的文件类型
   const acceptTypes = '.heic,.heif,.jpg,.jpeg,.png,.webp';
-  const validTypes = ['image/heic', 'image/heif', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
   // 生成唯一ID
   const generateId = () => `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -35,29 +36,48 @@ export function PhotoUploader({
 
     for (const file of fileArray) {
       if (photos.length >= maxPhotos) break;
-      if (!validTypes.includes(file.type) && !file.name.toLowerCase().match(/\.(heic|heif|jpg|jpeg|png|webp)$/)) {
+      if (!isValidImageFile(file)) {
         continue;
       }
 
       const photoId = generateId();
 
-      // 模拟上传进度
+      // 显示上传进度
       setUploadProgress(prev => ({ ...prev, [photoId]: 0 }));
 
-      // 读取文件为DataURL（实际项目中应该上传到服务器）
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const url = e.target?.result as string;
+      try {
+        // 使用压缩函数处理图片
+        const compressedUrl = await compressImage(file, {
+          maxWidth: 800,
+          quality: 0.8,
+          mimeType: 'image/jpeg'
+        });
+
         const newPhoto: Photo = {
           id: photoId,
-          url,
+          url: compressedUrl,
           order: photos.length,
           uploadedAt: new Date().toISOString(),
         };
 
         onChange([...photos, newPhoto]);
-
-        // 模拟上传完成
+      } catch (error) {
+        console.error('图片上传失败:', error);
+        // 压缩失败时回退到原图
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const url = e.target?.result as string;
+          const newPhoto: Photo = {
+            id: photoId,
+            url,
+            order: photos.length,
+            uploadedAt: new Date().toISOString(),
+          };
+          onChange([...photos, newPhoto]);
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        // 清除进度
         setTimeout(() => {
           setUploadProgress(prev => {
             const newProgress = { ...prev };
@@ -65,22 +85,7 @@ export function PhotoUploader({
             return newProgress;
           });
         }, 500);
-      };
-
-      // 模拟进度更新
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 20;
-        setUploadProgress(prev => {
-          if (progress >= 100) {
-            clearInterval(interval);
-            return prev;
-          }
-          return { ...prev, [photoId]: progress };
-        });
-      }, 100);
-
-      reader.readAsDataURL(file);
+      }
     }
   }, [photos, maxPhotos, onChange]);
 
@@ -220,7 +225,7 @@ export function PhotoUploader({
                   <>
                     {/* 照片 */}
                     <img
-                      src={photo.url}
+                      src={sanitizeImageUrl(photo.url)}
                       alt={`照片 ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

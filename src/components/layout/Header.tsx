@@ -1,14 +1,21 @@
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Clock, Plus } from 'lucide-react';
+import { Home, Globe, HelpCircle, BookOpen, Clock, Languages, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { path: '/', label: '首页', icon: Home },
-  { path: '/timeline', label: '时光轴', icon: Clock },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Header() {
+  const { t, language, toggleLanguage } = useLanguage();
+
+  const navItems = [
+    { path: '/', label: t.nav.home, icon: Home },
+    { path: '/experiences', label: t.nav.experiences, icon: Globe },
+    { path: '/questions', label: t.nav.questions, icon: HelpCircle },
+    { path: '/reflection', label: t.nav.reflection, icon: BookOpen },
+    { path: '/timeline', label: t.nav.timeline, icon: Clock },
+    { path: '/stats', label: t.nav.stats, icon: BarChart2 },
+  ];
+
   return (
     <motion.header
       className="fixed top-0 left-0 right-0 z-50"
@@ -28,20 +35,25 @@ export function Header() {
             whileHover={{ scale: 1.05 }}
           >
             <span className="text-2xl">✨</span>
-            <span className="text-gray-900 font-bold text-lg hidden sm:block">
-              成长时光轴
-            </span>
+            <div className="hidden sm:block">
+              <span className="text-gray-900 font-bold text-lg">
+                Emma
+              </span>
+              <span className="text-gray-600 text-sm ml-1">
+                | Growing Up in AI Era
+              </span>
+            </div>
           </motion.div>
 
-          {/* 导航链接 */}
-          <div className="flex items-center gap-1">
+          {/* 导航链接和语言切换 */}
+          <div className="flex items-center gap-2">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    'relative px-4 py-2 rounded-lg transition-all duration-300',
+                    'relative px-3 py-2 rounded-lg transition-all duration-300',
                     'flex items-center gap-2',
                     isActive
                       ? 'text-purple-600 font-semibold bg-purple-50'
@@ -72,17 +84,45 @@ export function Header() {
               </NavLink>
             ))}
 
-            {/* 新建按钮 */}
-            <NavLink to="/create">
-              <motion.button
-                className="flex items-center gap-1 px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors shadow-sm"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">新建</span>
-              </motion.button>
-            </NavLink>
+            {/* 语言切换按钮 */}
+            <motion.button
+              onClick={toggleLanguage}
+              className="relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white overflow-hidden"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
+              {/* 渐变背景 */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500"
+                whileHover={{
+                  scale: 1.1,
+                  rotate: 5,
+                }}
+                transition={{ duration: 0.3 }}
+              />
+
+              {/* 额外的光效层 */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 opacity-0"
+                whileHover={{ opacity: 0.3 }}
+                transition={{ duration: 0.3 }}
+              />
+
+              {/* 阴影效果 */}
+              <motion.div
+                className="absolute inset-0 shadow-lg shadow-purple-500/25"
+                whileHover={{
+                  boxShadow: '0 10px 25px -5px rgba(147, 51, 234, 0.4), 0 8px 10px -6px rgba(59, 130, 246, 0.3)',
+                }}
+              />
+
+              {/* 按钮内容 */}
+              <div className="relative flex items-center gap-2 z-10">
+                <Languages className="w-4 h-4" />
+                <span>{language === 'zh' ? '中' : 'EN'}</span>
+              </div>
+            </motion.button>
           </div>
         </div>
       </nav>

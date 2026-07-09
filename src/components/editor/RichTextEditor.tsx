@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Bold, Italic, List, ListOrdered, Eye, Edit3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createSafeHtml } from '@/utils/sanitize';
 
 interface RichTextEditorProps {
   value: string;
@@ -163,7 +164,7 @@ export function RichTextEditor({
             {value ? (
               <div
                 className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
+                dangerouslySetInnerHTML={createSafeHtml(renderMarkdown(value))}
               />
             ) : (
               <p className="text-gray-400 text-center py-12">暂无内容</p>

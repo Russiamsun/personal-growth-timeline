@@ -1,41 +1,27 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { DataProvider } from '@/contexts/DataContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { ToastProvider } from '@/contexts/ToastContext';
 import { Header } from '@/components/layout/Header';
 import Home from '@/pages/Home';
-import YearPage from '@/pages/YearPage';
-import RecordPage from '@/pages/RecordPage';
-import CreatePage from '@/pages/CreatePage';
-import EditPage from '@/pages/EditPage';
+import ExperiencesPage from '@/pages/ExperiencesPage';
+import QuestionsPage from '@/pages/QuestionsPage';
+import ReflectionPage from '@/pages/ReflectionPage';
+import ActivityDetailPage from '@/pages/ActivityDetailPage';
 import TimelinePage from '@/pages/TimelinePage';
-
-// 占位页面组件
-function ArticlesPage() {
-  return (
-    <div className="min-h-screen pt-20 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">文章页面</h1>
-        <p className="text-gray-600">功能开发中...</p>
-      </div>
-    </div>
-  );
-}
-
-function AboutPage() {
-  return (
-    <div className="min-h-screen pt-20 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">关于页面</h1>
-        <p className="text-gray-600">功能开发中...</p>
-      </div>
-    </div>
-  );
-}
+import StatsPage from '@/pages/StatsPage';
+import CreateActivityPage from '@/pages/CreateActivityPage';
+import EditActivityPage from '@/pages/EditActivityPage';
+import CreateQuestionPage from '@/pages/CreateQuestionPage';
+import EditQuestionPage from '@/pages/EditQuestionPage';
+import CreateReflectionPage from '@/pages/CreateReflectionPage';
+import EditReflectionPage from '@/pages/EditReflectionPage';
 
 // Layout组件
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
-      {/* 添加padding-top避免内容被固定的Header遮挡 */}
       <main className="pt-16">
         {children}
       </main>
@@ -45,19 +31,30 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Router basename="/personal-growth-timeline">
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/articles" element={<ArticlesPage />} />
-          <Route path="/timeline" element={<TimelinePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/year/:year" element={<YearPage />} />
-          <Route path="/record/:id" element={<RecordPage />} />
-          <Route path="/create" element={<CreatePage />} />
-          <Route path="/edit/:id" element={<EditPage />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <LanguageProvider>
+      <DataProvider>
+        <ToastProvider>
+          <Router basename="/personal-growth-timeline">
+            <Layout>
+              <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/experiences" element={<ExperiencesPage />} />
+              <Route path="/questions" element={<QuestionsPage />} />
+              <Route path="/reflection" element={<ReflectionPage />} />
+              <Route path="/activity/:id" element={<ActivityDetailPage />} />
+              <Route path="/activity/create" element={<CreateActivityPage />} />
+              <Route path="/activity/edit/:id" element={<EditActivityPage />} />
+              <Route path="/question/create" element={<CreateQuestionPage />} />
+              <Route path="/question/edit/:id" element={<EditQuestionPage />} />
+              <Route path="/reflection/create" element={<CreateReflectionPage />} />
+              <Route path="/reflection/edit/:id" element={<EditReflectionPage />} />
+              <Route path="/timeline" element={<TimelinePage />} />
+              <Route path="/stats" element={<StatsPage />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </ToastProvider>
+    </DataProvider>
+  </LanguageProvider>
   );
 }
