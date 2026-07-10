@@ -43,7 +43,11 @@ export default function ReflectionPage() {
     });
 
     if (confirmed) {
-      deleteReflection(id);
+      try {
+        await deleteReflection(id);
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
     }
   };
 

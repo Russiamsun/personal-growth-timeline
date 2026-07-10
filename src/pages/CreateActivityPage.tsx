@@ -76,7 +76,7 @@ export default function CreateActivityPage() {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
-      addActivity({
+      await addActivity({
         type: formData.type,
         titleZh: formData.titleZh.trim(),
         titleEn: formData.titleEn.trim(),
@@ -91,8 +91,6 @@ export default function CreateActivityPage() {
         tagsZh,
         tagsEn,
       });
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       navigate('/experiences');
     } catch (error: any) {

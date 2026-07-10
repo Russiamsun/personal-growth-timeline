@@ -60,7 +60,7 @@ export default function CreateQuestionPage() {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
-      addQuestion({
+      await addQuestion({
         questionZh: formData.questionZh.trim(),
         questionEn: formData.questionEn.trim(),
         thoughtsZh: formData.thoughtsZh.trim() || undefined,
@@ -69,8 +69,6 @@ export default function CreateQuestionPage() {
         tagsZh: tagsZh.length > 0 ? tagsZh : undefined,
         tagsEn: tagsEn.length > 0 ? tagsEn : undefined,
       });
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       navigate('/questions');
     } catch (error: any) {

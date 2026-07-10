@@ -103,7 +103,7 @@ export default function EditActivityPage() {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
-      updateActivity(id, {
+      await updateActivity(id, {
         type: formData.type,
         titleZh: formData.titleZh.trim(),
         titleEn: formData.titleEn.trim(),
@@ -118,8 +118,6 @@ export default function EditActivityPage() {
         tagsZh,
         tagsEn,
       });
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       navigate('/experiences');
     } catch (error: any) {

@@ -51,7 +51,11 @@ export default function QuestionsPage() {
     });
 
     if (confirmed) {
-      deleteQuestion(id);
+      try {
+        await deleteQuestion(id);
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
     }
   };
 

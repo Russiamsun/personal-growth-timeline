@@ -81,7 +81,7 @@ export default function EditQuestionPage() {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
-      updateQuestion(id, {
+      await updateQuestion(id, {
         questionZh: formData.questionZh.trim(),
         questionEn: formData.questionEn.trim(),
         thoughtsZh: formData.thoughtsZh.trim() || undefined,
@@ -90,8 +90,6 @@ export default function EditQuestionPage() {
         tagsZh: tagsZh.length > 0 ? tagsZh : undefined,
         tagsEn: tagsEn.length > 0 ? tagsEn : undefined,
       });
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       navigate('/questions');
     } catch (error: any) {

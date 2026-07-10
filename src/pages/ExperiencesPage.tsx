@@ -49,7 +49,11 @@ export default function ExperiencesPage() {
     });
 
     if (confirmed) {
-      deleteActivity(id);
+      try {
+        await deleteActivity(id);
+      } catch (error) {
+        console.error('删除失败:', error);
+      }
     }
   };
 

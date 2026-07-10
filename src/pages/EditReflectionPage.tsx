@@ -77,15 +77,13 @@ export default function EditReflectionPage() {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
-      updateReflection(id, {
+      await updateReflection(id, {
         contentZh: formData.contentZh.trim(),
         contentEn: formData.contentEn.trim(),
         date: formData.date,
         tagsZh: tagsZh.length > 0 ? tagsZh : undefined,
         tagsEn: tagsEn.length > 0 ? tagsEn : undefined,
       });
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       navigate('/reflection');
     } catch (error: any) {
