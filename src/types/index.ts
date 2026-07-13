@@ -56,10 +56,11 @@ export interface Reflection {
 // 照片类型
 export interface Photo {
   id: string;
-  url: string; // 照片路径
+  url: string; // 照片路径（Storage URL或网络URL）
   order: number; // 排序序号
   caption?: string; // 照片描述/说明
   uploadedAt: string; // 上传时间
+  storagePath?: string; // Storage路径（用于删除，可选）
 }
 
 // 活动类型图标和颜色映射

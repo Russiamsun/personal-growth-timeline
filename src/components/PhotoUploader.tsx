@@ -4,7 +4,7 @@ import { Upload, X, Image, Plus, Link, ArrowUp, ArrowDown } from 'lucide-react';
 import { Photo } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { sanitizeImageUrl } from '@/utils/sanitize';
-import { compressImage } from '@/utils/imageCompression';
+import { uploadMultipleImages, deleteImageFromStorage, extractPathFromUrl } from '@/services/storage';
 
 interface PhotoUploaderProps {
   photos: Photo[];
@@ -24,7 +24,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
     return `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // 处理文件上传
+  // 处理文件上传（上传到Supabase Storage）
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -47,48 +47,21 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
     }
 
     try {
-      // 压缩并转换所有图片
-      const compressedImages = await Promise.all(
-        validFiles.map(async (file) => {
-          try {
-            // 使用压缩工具函数，默认配置：maxWidth: 800, quality: 0.8
-            const compressedBase64 = await compressImage(file, {
-              maxWidth: 800,
-              quality: 0.8,
-              mimeType: 'image/jpeg'
-            });
-            return {
-              base64: compressedBase64,
-              fileName: file.name,
-            };
-          } catch (error) {
-            console.error(`压缩图片 ${file.name} 失败:`, error);
-            toast.warning(`图片 ${file.name} 压缩失败，已使用原图`);
-            // 压缩失败时回退到原图
-            return new Promise<{ base64: string; fileName: string }>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = (e) => resolve({
-                base64: e.target?.result as string,
-                fileName: file.name
-              });
-              reader.onerror = () => reject(error);
-              reader.readAsDataURL(file);
-            });
-          }
-        })
-      );
+      // 上传图片到Supabase Storage
+      const uploadResults = await uploadMultipleImages(validFiles);
 
-      // 添加到photos数组
-      const newPhotos: Photo[] = compressedImages.map((img, index) => ({
+      // 添加到photos数组（使用Storage URL替代Base64）
+      const newPhotos: Photo[] = uploadResults.map((result, index) => ({
         id: generateId(),
-        url: img.base64,
+        url: result.url, // 使用Storage公开URL
         order: photos.length + index + 1,
-        caption: img.fileName.replace(/\.[^/.]+$/, ''), // 使用文件名（去掉扩展名）作为caption
+        caption: result.fileName.replace(/\.[^/.]+$/, ''), // 使用文件名（去掉扩展名）作为caption
         uploadedAt: new Date().toISOString(),
+        storagePath: result.path, // 新增字段：Storage路径（用于删除）
       }));
 
       onChange([...photos, ...newPhotos]);
-      toast.success(`成功上传 ${newPhotos.length} 张照片（已压缩）`);
+      toast.success(`成功上传 ${newPhotos.length} 张照片到云端`);
     } catch (error) {
       console.error('图片上传失败:', error);
       toast.error('图片上传失败，请重试');
@@ -121,12 +94,28 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
     setCaptionInput('');
   };
 
-  // 删除照片
-  const handleDelete = (photoId: string) => {
-    const updatedPhotos = photos
-      .filter(p => p.id !== photoId)
-      .map((p, index) => ({ ...p, order: index + 1 })); // 重新排序
-    onChange(updatedPhotos);
+  // 删除照片（同时删除Storage中的图片）
+  const handleDelete = async (photoId: string) => {
+    const photo = photos.find(p => p.id === photoId);
+    if (!photo) return;
+
+    try {
+      // 如果是Storage图片，尝试从Storage删除
+      const storagePath = extractPathFromUrl(photo.url);
+      if (storagePath) {
+        await deleteImageFromStorage(storagePath);
+        console.log('[PhotoUploader] 已从Storage删除:', storagePath);
+      }
+
+      // 从列表中移除
+      const updatedPhotos = photos
+        .filter(p => p.id !== photoId)
+        .map((p, index) => ({ ...p, order: index + 1 })); // 重新排序
+      onChange(updatedPhotos);
+    } catch (error) {
+      console.error('[PhotoUploader] 删除照片失败:', error);
+      toast.error('删除照片失败，请重试');
+    }
   };
 
   // 上移照片
