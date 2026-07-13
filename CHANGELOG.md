@@ -1,5 +1,278 @@
 # 项目更新日志 (CHANGELOG)
 
+## v1.2.0 - Supabase云端数据库实现 (2026-07-10)
+
+### 🎯 核心更新
+
+**重大突破：解决数据无法跨用户/跨设备同步的根本问题**
+
+从localStorage本地存储迁移到Supabase云端数据库，实现真正的数据持久化和跨用户同步。
+
+---
+
+### 📊 更新统计
+
+- **新增文件**：2个
+- **修改文件**：10个
+- **新增数据库表**：3个（activities、questions、reflections）
+- **数据迁移**：14条记录（2活动、5问题、7反思）
+
+---
+
+### 一、新增文件清单
+
+| 文件名 | 功能说明 |
+|--------|----------|
+| `supabase-import-data.sql` | 数据导入SQL脚本，包含完整的初始数据（14条记录） |
+| `.env.local` | 本地环境变量配置文件（Supabase URL和Key） |
+
+---
+
+### 二、修改文件清单
+
+#### 1. 核心数据层
+
+| 文件 | 改动内容 |
+|------|----------|
+| `src/contexts/DataContext.tsx` | 全面重构：支持localStorage + Supabase双模式，所有CRUD改为async，添加数据迁移和版本管理（v3→v4） |
+| `src/lib/supabase.ts` | 新增Supabase客户端初始化，环境变量验证，配置有效性检查 |
+
+#### 2. 创建/编辑页面（6个）
+
+| 文件 | 改动内容 |
+|------|----------|
+| `src/pages/CreateActivityPage.tsx` | handleSubmit改为async，修正await调用 |
+| `src/pages/EditActivityPage.tsx` | handleSubmit改为async，修正await调用 |
+| `src/pages/CreateQuestionPage.tsx` | handleSubmit改为async，修正await调用 |
+| `src/pages/EditQuestionPage.tsx` | handleSubmit改为async，修正await调用 |
+| `src/pages/CreateReflectionPage.tsx` | handleSubmit改为async，修正await调用 |
+| `src/pages/EditReflectionPage.tsx` | handleSubmit改为async，修正await调用 |
+
+#### 3. 列表页面删除操作（3个）
+
+| 文件 | 改动内容 |
+|------|----------|
+| `src/pages/ExperiencesPage.tsx` | handleDelete添加错误处理，修正async调用 |
+| `src/pages/QuestionsPage.tsx` | handleDelete添加错误处理，修正async调用 |
+| `src/pages/ReflectionPage.tsx` | handleDelete添加错误处理，修正async调用 |
+
+#### 4. GitHub Actions配置
+
+| 文件 | 改动内容 |
+|------|----------|
+| `.github/workflows/deploy.yml` | Build步骤添加环境变量注入，解决生产环境无法连接Supabase的问题 |
+
+---
+
+### 三、数据库结构设计
+
+#### activities表（真实世界经历）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | TEXT | 主键 |
+| type | TEXT | 活动类型 |
+| title_zh, title_en | TEXT | 双语标题 |
+| description_zh, description_en | TEXT | 双语描述 |
+| content_zh, content_en | TEXT | 双语内容 |
+| date | TEXT | 日期 |
+| location_zh, location_en | TEXT | 双语地点 |
+| photos | JSONB | 图片数组 |
+| tags_zh, tags_en | JSONB | 双语标签数组 |
+| created_at, updated_at | TIMESTAMPTZ | 时间戳 |
+
+#### questions表（正在思考的问题）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | TEXT | 主键 |
+| question_zh, question_en | TEXT | 双语问题内容 |
+| thoughts_zh, thoughts_en | TEXT | 双语思考 |
+| date | TEXT | 日期 |
+| tags_zh, tags_en | JSONB | 双语标签数组 |
+| created_at, updated_at | TIMESTAMPTZ | 时间戳 |
+
+#### reflections表（成长反思）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | TEXT | 主键 |
+| content_zh, content_en | TEXT | 双语反思内容 |
+| date | TEXT | 日期 |
+| tags_zh, tags_en | JSONB | 双语标签数组 |
+| created_at, updated_at | TIMESTAMPTZ | 时间戳 |
+
+---
+
+### 四、技术实现亮点
+
+#### 1. 双模式切换机制
+
+```typescript
+// DataContext自动判断使用哪种数据源
+if (isSupabaseConfigured()) {
+  // Supabase云端数据库
+  await supabase.from('activities').select('*');
+} else {
+  // localStorage本地存储（自动降级）
+  localStorage.getItem(STORAGE_KEY);
+}
+```
+
+#### 2. 自动降级策略
+
+- Supabase连接失败时自动回退localStorage
+- 用户体验无缝衔接，不会因云端故障影响使用
+- Console日志清晰显示当前模式：`[Supabase]` 或 `[LocalStorage]`
+
+#### 3. 乐观更新（Optimistic Update）
+
+```typescript
+// UI立即响应，用户无感知延迟
+setActivities(prev => [...prev, newActivity]);
+
+// 异步同步到云端，失败时回滚
+try {
+  await supabase.from('activities').insert(activityData);
+} catch (error) {
+  // 回滚UI状态
+  setActivities(prev => prev.filter(a => a.id !== id));
+}
+```
+
+#### 4. 字段名映射
+
+- JSON格式（前端）：`titleZh`、`titleEn`、`tagsZh`
+- SQL格式（数据库）：`title_zh`、`title_en`、`tags_zh`
+
+自动转换，无需手动处理。
+
+#### 5. 版本管理与数据迁移
+
+```typescript
+// 自动检测旧版本数据并迁移
+const currentVersion = data.version || 'v1';
+if (currentVersion !== CURRENT_VERSION) {
+  migrateData(data);
+}
+```
+
+---
+
+### 五、环境变量配置
+
+#### 本地开发（`.env.local`）
+
+```env
+VITE_SUPABASE_URL=https://kjzsixyrkywkmuborwam.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_DATA_SOURCE=supabase
+```
+
+#### GitHub生产环境（Secrets）
+
+| Secret名称 | 说明 |
+|-----------|------|
+| VITE_SUPABASE_URL | Supabase项目URL |
+| VITE_SUPABASE_ANON_KEY | anon公钥（eyJ开头） |
+| VITE_DATA_SOURCE | 数据源模式 |
+
+---
+
+### 六、部署验证
+
+#### 成功标志
+
+1. **本地测试**：
+   ```
+   ✅ [Supabase] 数据加载成功: 2个活动, 5个问题, 7个反思
+   ```
+
+2. **生产环境测试**：
+   - Console显示 `[Supabase] 数据加载成功`
+   - 用户A创建数据，用户B刷新页面能看到 ✅
+   - 跨设备访问能看到相同数据 ✅
+
+3. **Supabase Dashboard**：
+   - activities表：2条记录 ✅
+   - questions表：5条记录 ✅
+   - reflections表：7条记录 ✅
+
+---
+
+### 七、解决的问题
+
+#### 核心问题：数据无法跨用户同步
+
+**问题现象**：
+- 用户A新建内容，只有用户A的浏览器能看到
+- 用户B访问同一网站地址，完全看不到用户A创建的内容
+- 刷新页面后内容还在，确认数据写入localStorage成功
+
+**根本原因**：
+- localStorage是浏览器本地存储，每个浏览器实例/设备有独立存储空间
+- GitHub Pages是纯静态部署，没有后端服务器进行数据同步
+- 项目已安装Supabase依赖但未启用云端存储
+
+**解决方案**：
+- 启用Supabase云端数据库
+- DataContext支持双模式切换
+- 自动降级机制保证可用性
+- GitHub Secrets注入环境变量
+
+---
+
+### 八、安全性说明
+
+#### anon key安全性
+
+- anon key是公开密钥，设计为可在前端使用
+- 安全性依赖于RLS（Row Level Security）策略
+- service_role key绝不在前端使用（仅后端）
+
+#### 当前RLS策略
+
+- 公开读取：适合Portfolio展示
+- 公开写入：单用户模式（无需认证）
+- 如需多用户支持，需启用Supabase Auth并修改RLS策略
+
+---
+
+### 九、Supabase免费额度评估
+
+| 项目 | 免费额度 | 个人使用评估 |
+|------|---------|-------------|
+| 数据库存储 | 500MB | 足够存储数千条记录 ✅ |
+| 文件存储 | 1GB | 可存储图片等资源 ✅ |
+| 月带宽 | 5GB | 足够个人Portfolio访问 ✅ |
+| API请求 | 无限制 | 免费版无限制 ✅ |
+
+**结论**：免费版完全满足个人Portfolio需求。
+
+---
+
+### 十、后续优化建议（可选）
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| Supabase Auth认证 | 未实施 | 如需多用户支持，需启用认证系统 |
+| 图片上传到Supabase Storage | 未实施 | 可替代外部图片链接 |
+| 数据备份导出 | 已有功能 | export.ts服务支持JSON/HTML导出 |
+
+---
+
+### 十一、文档更新
+
+| 文件 | 更新内容 |
+|------|----------|
+| `SupabaseSetup.md` | 全面更新为三表结构配置指南，包含GitHub Secrets配置说明 |
+| `部署指南.md` | 添加Supabase环境变量配置章节 |
+| `CHANGELOG.md` | 添加v1.2.0版本详细记录 |
+
+---
+
+## v1.1.0 - 全面改进优化 (2026-07-09)
+
 > 更新时间：2026-07-09
 > 版本：v1.1.0
 
