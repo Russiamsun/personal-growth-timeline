@@ -1,21 +1,25 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 /**
- * Supabase Storage 图片上传服务 - 增强版
- * 支持云端上传 + 本地存储fallback
+ * Supabase Storage 图片上传服务
+ * 优化版：快速压缩 + 智能重试 + 详细错误提示
  */
 
 const BUCKET_NAME = 'activity-photos';
 
-// 检测是否为在线环境
-const isOnline = (): boolean => {
-  return navigator.onLine;
-};
+// 重试配置
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1秒
 
 /**
- * 压缩图片
+ * 压缩图片（快速版）
  */
 async function compressImage(file: File): Promise<File> {
+  // 小于100KB不压缩
+  if (file.size < 100 * 1024) {
+    return file;
+  }
+
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -24,17 +28,14 @@ async function compressImage(file: File): Promise<File> {
       URL.revokeObjectURL(url);
 
       try {
+        // 快速压缩：最大800px，质量0.6
         const maxDim = 800;
         let { width, height } = img;
 
         if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = (height * maxDim) / width;
-            width = maxDim;
-          } else {
-            width = (width * maxDim) / height;
-            height = maxDim;
-          }
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
         }
 
         const canvas = document.createElement('canvas');
@@ -51,20 +52,22 @@ async function compressImage(file: File): Promise<File> {
 
         canvas.toBlob(
           (blob) => {
-            if (blob && blob.size < file.size) {
+            if (blob && blob.size < file.size * 0.9) {
               const compressedFile = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
               });
+              console.log(`[压缩] ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
               resolve(compressedFile);
             } else {
               resolve(file);
             }
           },
           'image/jpeg',
-          0.7
+          0.6
         );
       } catch (e) {
+        console.warn('[压缩失败]', e);
         resolve(file);
       }
     };
@@ -79,96 +82,152 @@ async function compressImage(file: File): Promise<File> {
 }
 
 /**
- * 转换为Base64（本地存储用）
+ * 延迟函数
  */
-async function toBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * 检查Storage bucket是否存在
+ */
+async function checkBucket(): Promise<{ exists: boolean; error?: string }> {
+  try {
+    // 尝试列出bucket中的文件（测试权限）
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list('', { limit: 1 });
+
+    if (error) {
+      if (error.message.includes('not found') || error.message.includes('does not exist')) {
+        return { exists: false, error: `Storage bucket "${BUCKET_NAME}" 不存在，请在Supabase控制台创建` };
+      }
+      if (error.message.includes('permission') || error.message.includes('policy')) {
+        return { exists: false, error: `Storage bucket权限不足，请检查RLS策略` };
+      }
+      return { exists: false, error: error.message };
+    }
+
+    return { exists: true };
+  } catch (e: any) {
+    return { exists: false, error: e.message };
+  }
 }
 
 /**
- * 上传图片（云端优先，本地fallback）
+ * 上传单张图片（带重试）
+ */
+async function uploadWithRetry(
+  file: File,
+  retryCount: number = 0
+): Promise<{ url: string; path: string }> {
+  try {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 6);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `${timestamp}-${random}.${ext}`;
+
+    console.log(`[上传] 第${retryCount + 1}次尝试: ${fileName}`);
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    // 获取公开URL
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(data.path);
+
+    console.log(`[上传成功] ${urlData.publicUrl}`);
+
+    return {
+      url: urlData.publicUrl,
+      path: data.path,
+    };
+  } catch (error: any) {
+    console.warn(`[上传失败] 第${retryCount + 1}次:`, error.message);
+
+    // 网络错误或临时错误，重试
+    if (retryCount < MAX_RETRIES - 1) {
+      const isNetworkError = error.message.includes('fetch') ||
+                             error.message.includes('network') ||
+                             error.message.includes('timeout');
+
+      if (isNetworkError) {
+        console.log(`[重试] 等待${RETRY_DELAY}ms后重试...`);
+        await delay(RETRY_DELAY);
+        return uploadWithRetry(file, retryCount + 1);
+      }
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * 上传图片到Supabase Storage
  */
 export async function uploadImageToStorage(
   file: File,
   folderPath?: string
 ): Promise<{ url: string; path: string }> {
-  // 1. 压缩图片
-  const compressedFile = file.size > 50 * 1024 ? await compressImage(file) : file;
-
-  // 2. 尝试云端上传
-  if (isSupabaseConfigured() && isOnline()) {
-    try {
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(2, 6);
-      const ext = compressedFile.name.split('.').pop() || 'jpg';
-      const fileName = `${timestamp}-${random}.${ext}`;
-      const fullPath = folderPath ? `${folderPath}/${fileName}` : fileName;
-
-      console.log('[上传] 尝试云端上传...');
-
-      const { data, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(fullPath, compressedFile, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (error) {
-        console.warn('[云端上传失败]', error.message);
-        // 继续使用本地存储
-      } else {
-        // 成功
-        const { data: urlData } = supabase.storage
-          .from(BUCKET_NAME)
-          .getPublicUrl(data.path);
-
-        console.log('[上传成功] 云端URL');
-        return {
-          url: urlData.publicUrl,
-          path: data.path,
-        };
-      }
-    } catch (e) {
-      console.warn('[云端上传异常]', e);
-      // 继续使用本地存储
-    }
+  // 检查配置
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase未配置，请检查环境变量 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY');
   }
 
-  // 3. Fallback: 本地Base64存储
-  console.log('[上传] 使用本地存储');
-  const base64 = await toBase64(compressedFile);
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 6);
+  // 检查bucket
+  const bucketCheck = await checkBucket();
+  if (!bucketCheck.exists) {
+    throw new Error(`Storage检查失败: ${bucketCheck.error}`);
+  }
 
-  return {
-    url: base64,
-    path: `local-${timestamp}-${random}`,
-  };
+  // 压缩图片
+  const compressedFile = await compressImage(file);
+
+  // 上传（带重试）
+  return uploadWithRetry(compressedFile);
 }
 
 /**
- * 批量上传
+ * 批量上传图片
  */
 export async function uploadMultipleImages(
   files: File[],
   folderPath?: string
 ): Promise<{ url: string; path: string; fileName: string }[]> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase未配置');
+  }
+
+  // 检查bucket
+  const bucketCheck = await checkBucket();
+  if (!bucketCheck.exists) {
+    throw new Error(`Storage检查失败: ${bucketCheck.error}`);
+  }
+
+  // 并行上传所有图片
   const results = await Promise.all(
     files.map(async (file) => {
-      const result = await uploadImageToStorage(file, folderPath);
-      return {
-        ...result,
-        fileName: file.name,
-      };
+      try {
+        const result = await uploadImageToStorage(file, folderPath);
+        return {
+          ...result,
+          fileName: file.name,
+        };
+      } catch (error: any) {
+        console.error(`[批量上传失败] ${file.name}:`, error.message);
+        throw error;
+      }
     })
   );
 
-  console.log(`[批量上传] 成功 ${results.length} 张`);
+  console.log(`[批量上传完成] 成功 ${results.length} 张`);
   return results;
 }
 
@@ -176,19 +235,20 @@ export async function uploadMultipleImages(
  * 删除图片
  */
 export async function deleteImageFromStorage(path: string): Promise<void> {
-  // 本地存储不需要删除，直接返回
-  if (path.startsWith('local-')) {
-    return;
-  }
-
-  if (!isSupabaseConfigured() || !isOnline()) {
+  if (!isSupabaseConfigured()) {
     return;
   }
 
   try {
-    await supabase.storage.from(BUCKET_NAME).remove([path]);
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove([path]);
+
+    if (error) {
+      console.warn('[删除失败]', error.message);
+    }
   } catch (e) {
-    console.warn('[删除失败]', e);
+    console.warn('[删除异常]', e);
   }
 }
 
@@ -203,11 +263,6 @@ export function isStorageUrl(url: string): boolean {
  * 从URL提取路径
  */
 export function extractPathFromUrl(url: string): string | null {
-  if (url.startsWith('data:')) {
-    // Base64本地存储
-    return `local-${Date.now()}`;
-  }
-
   if (!isStorageUrl(url)) return null;
 
   const match = url.match(/\/activity-photos\/(.+)/);
