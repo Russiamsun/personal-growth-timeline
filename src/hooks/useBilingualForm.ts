@@ -18,7 +18,7 @@ export interface BilingualValue {
  * 
  * 统一处理中英文双语输入逻辑，减少表单页面重复代码
  */
-export function useBilingualForm(initialMode: InputMode = 'both') {
+export function useBilingualForm(initialMode: InputMode = 'zh') {
   const [inputMode, setInputMode] = useState<InputMode>(initialMode);
 
   /**

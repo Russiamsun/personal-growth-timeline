@@ -357,7 +357,7 @@ export function InputModeSelector({
     green: 'bg-green-500',
   };
 
-  const modes: InputMode[] = ['both', 'zh', 'en'];
+  const modes: InputMode[] = ['zh', 'en', 'both'];
 
   return (
     <div className="flex gap-2 border-b border-gray-200 pb-4">

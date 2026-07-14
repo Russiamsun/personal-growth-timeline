@@ -183,6 +183,18 @@ export default function CreateActivityPage() {
               </div>
             </div>
 
+            {/* 输入模式切换 */}
+            <InputModeSelector
+              value={inputMode}
+              onChange={setInputMode}
+              labels={{
+                both: t.form.inputBoth,
+                zh: t.form.inputZh,
+                en: t.form.inputEn,
+              }}
+              colorScheme="orange"
+            />
+
             {/* 标题 */}
             <BilingualInputField
               label={t.form.title}
@@ -231,18 +243,6 @@ export default function CreateActivityPage() {
               required
               colorScheme="orange"
               showTranslate
-            />
-
-            {/* 输入模式切换 */}
-            <InputModeSelector
-              value={inputMode}
-              onChange={setInputMode}
-              labels={{
-                both: t.form.inputBoth,
-                zh: t.form.inputZh,
-                en: t.form.inputEn,
-              }}
-              colorScheme="orange"
             />
 
             {/* 日期和地点 */}

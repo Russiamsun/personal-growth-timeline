@@ -50,8 +50,8 @@ function textToHtml(text: string): string {
     .map(line => line.trim())
     .filter(line => line.length > 0);
 
-  // 转换为HTML段落
-  return lines.map(line => `<p>${escapeHtml(line)}</p>`).join('');
+  // 转换为HTML段落（使用div避免默认margin）
+  return lines.map(line => `<div>${escapeHtml(line)}</div>`).join('');
 }
 
 /**
