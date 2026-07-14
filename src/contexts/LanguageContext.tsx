@@ -276,7 +276,7 @@ const translations: Record<Language, TranslationStrings> = {
       currentLanguage: '当前语言',
       switchToZh: '切换到中文',
       switchToEn: '切换到英文',
-      inputBoth: '双语输入（推荐）',
+      inputBoth: '双语输入',
       inputZh: '中文输入',
       inputEn: '英文输入',
     },
