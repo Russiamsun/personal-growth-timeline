@@ -39,25 +39,19 @@ function isHtmlContent(content: string): boolean {
 
 /**
  * 将纯文本转换为HTML格式
- * - 自动将换行符转换为段落
- * - 保留空行作为段落分隔
+ * - 每一行都转换为一个段落
  */
 function textToHtml(text: string): string {
   if (!text) return '';
 
-  // 分割为段落（以双换行或单换行为分隔）
-  const paragraphs = text
-    .split(/\n\s*\n/) // 先按双换行分割
-    .map(p => p.trim())
-    .filter(p => p.length > 0)
-    .flatMap(p => {
-      // 如果段落内有单换行，也作为分段处理
-      const lines = p.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      return lines;
-    });
+  // 按换行符分割，每行转为一个段落
+  const lines = text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
 
   // 转换为HTML段落
-  return paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+  return lines.map(line => `<p>${escapeHtml(line)}</p>`).join('');
 }
 
 /**
