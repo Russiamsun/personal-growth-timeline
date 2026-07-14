@@ -1,5 +1,6 @@
 import { Activity, ActivityType, ActivityTypeConfig, Language } from '@/types';
 import { TranslationStrings } from '@/contexts/LanguageContext';
+import { translateText } from '@/utils/translate';
 
 /**
  * 根据语言获取活动的标题
@@ -59,6 +60,94 @@ export function getContent(activity: Activity, lang: Language): string {
     return zhContent || enContent || '';
   }
   return enContent || zhContent || '';
+}
+
+/**
+ * 异步获取标题（支持自动翻译）
+ */
+export async function getTitleAsync(activity: Activity, lang: Language): Promise<string> {
+  const zhTitle = activity.titleZh || '';
+  const enTitle = activity.titleEn || '';
+  
+  if (lang === 'zh') {
+    if (zhTitle) return zhTitle;
+    if (enTitle) {
+      return await translateText(enTitle, 'en', 'zh');
+    }
+    return '无标题';
+  } else {
+    if (enTitle) return enTitle;
+    if (zhTitle) {
+      return await translateText(zhTitle, 'zh', 'en');
+    }
+    return 'No Title';
+  }
+}
+
+/**
+ * 异步获取描述（支持自动翻译）
+ */
+export async function getDescriptionAsync(activity: Activity, lang: Language): Promise<string> {
+  const zhDesc = activity.descriptionZh || '';
+  const enDesc = activity.descriptionEn || '';
+  
+  if (lang === 'zh') {
+    if (zhDesc) return zhDesc;
+    if (enDesc) {
+      return await translateText(enDesc, 'en', 'zh');
+    }
+    return '';
+  } else {
+    if (enDesc) return enDesc;
+    if (zhDesc) {
+      return await translateText(zhDesc, 'zh', 'en');
+    }
+    return '';
+  }
+}
+
+/**
+ * 异步获取内容（支持自动翻译）
+ */
+export async function getContentAsync(activity: Activity, lang: Language): Promise<string> {
+  const zhContent = activity.contentZh || '';
+  const enContent = activity.contentEn || '';
+  
+  if (lang === 'zh') {
+    if (zhContent) return zhContent;
+    if (enContent) {
+      return await translateText(enContent, 'en', 'zh');
+    }
+    return '';
+  } else {
+    if (enContent) return enContent;
+    if (zhContent) {
+      return await translateText(zhContent, 'zh', 'en');
+    }
+    return '';
+  }
+}
+
+/**
+ * 异步获取地点（支持自动翻译）
+ */
+export async function getLocationAsync(activity: Activity, lang: Language): Promise<string> {
+  const zhLoc = activity.locationZh || '';
+  const enLoc = activity.locationEn || '';
+  
+  if (lang === 'zh') {
+    if (zhLoc) return zhLoc;
+    if (enLoc) {
+      return await translateText(enLoc, 'en', 'zh');
+    }
+    return '';
+  } else {
+    if (enLoc) return enLoc;
+    if (zhLoc) {
+      return await translateText(zhLoc, 'zh', 'en');
+    }
+    return '';
+  }
 }
 
 /**

@@ -1,24 +1,62 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Tag, ArrowLeft, Image, Languages } from 'lucide-react';
+import { Calendar, MapPin, Tag, ArrowLeft, Image, Loader2 } from 'lucide-react';
 import { Activity, ActivityTypeConfig, ActivityType, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { createSafeHtml, sanitizeImageUrl } from '@/utils/sanitize';
-import { getTitle, getDescription, getLocation, getContent, getTags, getActivityTypeLabel } from '@/utils/bilingualHelpers';
+import { getTitle, getDescription, getLocation, getContent, getTags, getActivityTypeLabel, getTitleAsync, getDescriptionAsync, getContentAsync, getLocationAsync } from '@/utils/bilingualHelpers';
 import { formatDateByLang } from '@/utils/dateUtils';
-import { translateText } from '@/utils/translate';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ActivityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { activities, updateActivity } = useData();
+  const { activities } = useData();
   const { language, t } = useLanguage();
+  
+  // 翻译状态
+  const [translatedTitle, setTranslatedTitle] = useState('');
+  const [translatedDescription, setTranslatedDescription] = useState('');
+  const [translatedContent, setTranslatedContent] = useState('');
+  const [translatedLocation, setTranslatedLocation] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
 
   const activity = activities.find(a => a.id === id);
+
+  // 当语言或活动变化时，自动翻译缺失的内容
+  useEffect(() => {
+    if (!activity) return;
+
+    const translateContent = async () => {
+      setIsTranslating(true);
+      try {
+        // 并行翻译所有字段
+        const [title, description, content, location] = await Promise.all([
+          getTitleAsync(activity, language),
+          getDescriptionAsync(activity, language),
+          getContentAsync(activity, language),
+          getLocationAsync(activity, language),
+        ]);
+        
+        setTranslatedTitle(title);
+        setTranslatedDescription(description);
+        setTranslatedContent(content);
+        setTranslatedLocation(location);
+      } catch (error) {
+        console.error('翻译失败:', error);
+        // 翻译失败时使用原始值
+        setTranslatedTitle(getTitle(activity, language));
+        setTranslatedDescription(getDescription(activity, language));
+        setTranslatedContent(getContent(activity, language));
+        setTranslatedLocation(getLocation(activity, language));
+      } finally {
+        setIsTranslating(false);
+      }
+    };
+
+    translateContent();
+  }, [activity, language]);
 
   if (!activity) {
     return (
@@ -30,7 +68,7 @@ export default function ActivityDetailPage() {
         >
           <div className="text-orange-400 text-6xl mb-4">🔍</div>
           <p className="text-gray-600 text-lg mb-4">
-            {t.form.activityNotFound}
+            {language === 'zh' ? '找不到活动详情' : 'Activity not found'}
           </p>
           <motion.button
             onClick={() => navigate('/experiences')}
@@ -45,31 +83,6 @@ export default function ActivityDetailPage() {
   }
 
   const config = ActivityTypeConfig[activity.type];
-
-  // 翻译内容
-  const handleTranslateContent = async () => {
-    if (!activity.contentZh && !activity.contentEn) return;
-
-    setIsTranslating(true);
-    try {
-      const sourceText = language === 'zh' ? activity.contentEn || activity.contentZh : activity.contentZh || activity.contentEn;
-      const targetLang = language === 'zh' ? 'en' : 'zh';
-      const sourceLang = language === 'zh' ? 'en' : 'zh';
-
-      const translated = await translateText(sourceText, sourceLang, targetLang);
-      setTranslatedContent(translated);
-    } catch (error) {
-      console.error('翻译失败:', error);
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
-  // 获取显示的内容
-  const getDisplayContent = () => {
-    if (translatedContent) return translatedContent;
-    return getContent(activity, language);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 py-8">
@@ -87,7 +100,7 @@ export default function ActivityDetailPage() {
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">
-              {t.form.backToActivities}
+              {language === 'zh' ? '返回活动列表' : 'Back to Activities'}
             </span>
           </motion.button>
         </motion.div>
@@ -112,12 +125,17 @@ export default function ActivityDetailPage() {
                   >
                     <span className="text-xl">{config.icon}</span>
                   </motion.div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                    {getTitle(activity, language)}
-                  </h1>
+                  <div className="flex-1 flex items-center gap-2">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                      {translatedTitle || getTitle(activity, language)}
+                    </h1>
+                    {isTranslating && (
+                      <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+                    )}
+                  </div>
                 </div>
                 <p className="text-gray-500 text-sm italic">
-                  {getDescription(activity, language)}
+                  {translatedDescription || getDescription(activity, language)}
                 </p>
               </div>
 
@@ -136,7 +154,7 @@ export default function ActivityDetailPage() {
                     whileHover={{ scale: 1.05 }}
                   >
                     <MapPin className="w-4 h-4 text-amber-500" />
-                    <span className="font-medium">{getLocation(activity, language)}</span>
+                    <span className="font-medium">{translatedLocation || getLocation(activity, language)}</span>
                   </motion.div>
                 )}
               </div>
@@ -163,7 +181,7 @@ export default function ActivityDetailPage() {
                 <div className="mb-4 flex items-center gap-2">
                   <Image className="w-5 h-5 text-orange-500" />
                   <h2 className="text-lg font-semibold text-gray-800">
-                    {t.form.activityPhotos}
+                    {language === 'zh' ? '活动照片' : 'Activity Photos'}
                   </h2>
                   <span className="text-sm text-gray-500">({activity.photos.length})</span>
                 </div>
@@ -197,7 +215,7 @@ export default function ActivityDetailPage() {
                             {photo.caption}
                           </p>
                           <p className="text-orange-400 text-xs mt-1">
-                            {t.form.photoToUpload}
+                            {language === 'zh' ? '照片待上传' : 'Photo to be uploaded'}
                           </p>
                         </div>
                       )}
@@ -214,34 +232,11 @@ export default function ActivityDetailPage() {
 
             {/* 活动内容 */}
             <div className="px-6 md:px-10 pb-10">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-orange-500" />
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    {t.form.activityDetails}
-                  </h2>
-                </div>
-                {/* 翻译按钮 */}
-                {((language === 'zh' && !activity.contentEn) || (language === 'en' && !activity.contentZh)) && (
-                  <motion.button
-                    onClick={handleTranslateContent}
-                    disabled={isTranslating}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {isTranslating ? (
-                      <motion.div
-                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      />
-                    ) : (
-                      <Languages className="w-4 h-4" />
-                    )}
-                    <span>{language === 'zh' ? '翻译成英文' : '翻译成中文'}</span>
-                  </motion.button>
-                )}
+              <div className="mb-4 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-orange-500" />
+                <h2 className="text-lg font-semibold text-gray-800">
+                  {language === 'zh' ? '活动详情' : 'Activity Details'}
+                </h2>
               </div>
 
               <motion.div
@@ -250,10 +245,19 @@ export default function ActivityDetailPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <div
-                  className="text-gray-700 leading-relaxed space-y-4"
-                  dangerouslySetInnerHTML={createSafeHtml(getDisplayContent())}
-                />
+                {isTranslating ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
+                    <span className="ml-2 text-gray-500">
+                      {language === 'zh' ? '正在翻译...' : 'Translating...'}
+                    </span>
+                  </div>
+                ) : (
+                  <div
+                    className="text-gray-700 leading-relaxed space-y-4"
+                    dangerouslySetInnerHTML={createSafeHtml(translatedContent || getContent(activity, language))}
+                  />
+                )}
               </motion.div>
             </div>
           </div>

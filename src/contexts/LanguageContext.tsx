@@ -138,13 +138,6 @@ export interface TranslationStrings {
     inputBoth: string;
     inputZh: string;
     inputEn: string;
-    
-    // 活动详情页
-    activityNotFound: string;
-    backToActivities: string;
-    activityPhotos: string;
-    activityDetails: string;
-    photoToUpload: string;
   };
   
   // 活动类型
@@ -286,13 +279,6 @@ const translations: Record<Language, TranslationStrings> = {
       inputBoth: '双语输入',
       inputZh: '中文输入',
       inputEn: '英文输入',
-      
-      // 活动详情页
-      activityNotFound: '找不到活动详情',
-      backToActivities: '返回活动列表',
-      activityPhotos: '活动照片',
-      activityDetails: '活动详情',
-      photoToUpload: '照片待上传',
     },
     activityTypes: {
       charity: '公益活动',
@@ -424,16 +410,9 @@ const translations: Record<Language, TranslationStrings> = {
       currentLanguage: 'Current Language',
       switchToZh: 'Switch to Chinese',
       switchToEn: 'Switch to English',
-      inputBoth: 'Bilingual Input',
+      inputBoth: 'Bilingual Input (Recommended)',
       inputZh: 'Chinese Input',
       inputEn: 'English Input',
-      
-      // 活动详情页
-      activityNotFound: 'Activity not found',
-      backToActivities: 'Back to Activities',
-      activityPhotos: 'Activity Photos',
-      activityDetails: 'Activity Details',
-      photoToUpload: 'Photo to be uploaded',
     },
     activityTypes: {
       charity: 'Charity Activity',
