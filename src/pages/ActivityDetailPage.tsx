@@ -199,7 +199,7 @@ export default function ActivityDetailPage() {
                 transition={{ delay: 0.3 }}
               >
                 <div
-                  className="text-gray-700 leading-relaxed space-y-4"
+                  className="text-gray-700 leading-relaxed [&>p]:mb-3 [&>p]:last:mb-0"
                   dangerouslySetInnerHTML={createSafeHtml(getContent(activity, language))}
                 />
               </motion.div>
