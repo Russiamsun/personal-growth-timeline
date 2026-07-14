@@ -9,12 +9,13 @@ import PhotoUploader from '@/components/PhotoUploader';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useBilingualForm } from '@/hooks/useBilingualForm';
 import { BilingualInputField, InputModeSelector, TextInput } from '@/components/forms/FormFields';
+import { parseTags } from '@/utils/bilingualHelpers';
 
 export default function EditActivityPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { activities, updateActivity } = useData();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { errors, validate, clearError } = useFormValidation();
@@ -107,15 +108,8 @@ export default function EditActivityPage() {
     setIsSubmitting(true);
 
     try {
-      const tagsZh = formData.tagsZh
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-
-      const tagsEn = formData.tagsEn
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      const tagsZh = parseTags(formData.tagsZh);
+      const tagsEn = parseTags(formData.tagsEn);
 
       await updateActivity(id, {
         type: formData.type,
@@ -348,6 +342,7 @@ export default function EditActivityPage() {
               onChangeZh={(value) => handleChange('tagsZh', value)}
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
+              placeholder={language === 'zh' ? '多个标签用逗号分隔（中英文均可）' : 'Separate tags with commas'}
               colorScheme="orange"
             />
 

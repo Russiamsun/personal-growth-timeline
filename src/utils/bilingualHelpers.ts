@@ -3,6 +3,20 @@ import { TranslationStrings } from '@/contexts/LanguageContext';
 import { translateText } from '@/utils/translate';
 
 /**
+ * 解析标签字符串，支持中英文逗号
+ * @param tagsString - 标签字符串
+ * @returns 标签数组
+ */
+export function parseTags(tagsString: string): string[] {
+  if (!tagsString || !tagsString.trim()) return [];
+  // 支持英文逗号(,)和中文逗号(，)
+  return tagsString
+    .split(/[,，]/)
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0);
+}
+
+/**
  * 根据语言获取活动的标题
  * @param activity - 活动对象
  * @param lang - 语言类型

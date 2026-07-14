@@ -7,12 +7,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useBilingualForm } from '@/hooks/useBilingualForm';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { InputModeSelector, BilingualInputField, TextInput } from '@/components/forms/FormFields';
+import { parseTags } from '@/utils/bilingualHelpers';
 
 export default function EditQuestionPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { questions, updateQuestion } = useData();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { inputMode, setInputMode } = useBilingualForm('both');
@@ -77,15 +78,8 @@ export default function EditQuestionPage() {
     setIsSubmitting(true);
 
     try {
-      const tagsZh = formData.tagsZh
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-
-      const tagsEn = formData.tagsEn
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      const tagsZh = parseTags(formData.tagsZh);
+      const tagsEn = parseTags(formData.tagsEn);
 
       await updateQuestion(id, {
         questionZh: formData.questionZh.trim(),
@@ -259,6 +253,7 @@ export default function EditQuestionPage() {
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
               type="text"
+              placeholder={language === 'zh' ? '多个标签用逗号分隔（中英文均可）' : 'Separate tags with commas'}
               colorScheme="violet"
             />
 

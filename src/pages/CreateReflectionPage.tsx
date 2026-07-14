@@ -8,6 +8,7 @@ import { useBilingualForm, InputMode } from '@/hooks/useBilingualForm';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { InputModeSelector, BilingualInputField, TextInput } from '@/components/forms/FormFields';
 import { translateText } from '@/utils/translate';
+import { parseTags } from '@/utils/bilingualHelpers';
 
 export default function CreateReflectionPage() {
   const navigate = useNavigate();
@@ -56,15 +57,8 @@ export default function CreateReflectionPage() {
     setIsSubmitting(true);
 
     try {
-      const tagsZh = formData.tagsZh
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-
-      const tagsEn = formData.tagsEn
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      const tagsZh = parseTags(formData.tagsZh);
+      const tagsEn = parseTags(formData.tagsEn);
 
       await addReflection({
         contentZh: formData.contentZh.trim(),
@@ -337,6 +331,7 @@ export default function CreateReflectionPage() {
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
               type="text"
+              placeholder={language === 'zh' ? '多个标签用逗号分隔（中英文均可）' : 'Separate tags with commas'}
               colorScheme="green"
               showTranslate
             />

@@ -9,6 +9,7 @@ import PhotoUploader from '@/components/PhotoUploader';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useBilingualForm } from '@/hooks/useBilingualForm';
 import { BilingualInputField, InputModeSelector, TextInput } from '@/components/forms/FormFields';
+import { parseTags } from '@/utils/bilingualHelpers';
 
 export default function CreateActivityPage() {
   const navigate = useNavigate();
@@ -76,15 +77,8 @@ export default function CreateActivityPage() {
     setIsSubmitting(true);
 
     try {
-      const tagsZh = formData.tagsZh
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-
-      const tagsEn = formData.tagsEn
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      const tagsZh = parseTags(formData.tagsZh);
+      const tagsEn = parseTags(formData.tagsEn);
 
       await addActivity({
         type: formData.type,
@@ -285,7 +279,7 @@ export default function CreateActivityPage() {
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
               colorScheme="orange"
-              placeholder={language === 'zh' ? '多个标签用逗号分隔' : 'Separate tags with commas'}
+              placeholder={language === 'zh' ? '多个标签用逗号分隔（中英文均可）' : 'Separate tags with commas'}
             />
 
             {/* 照片管理 */}
