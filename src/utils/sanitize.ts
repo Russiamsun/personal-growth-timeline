@@ -29,12 +29,78 @@ export function sanitizeHtml(html: string): string {
 }
 
 /**
+ * 检测内容是否为HTML格式
+ */
+function isHtmlContent(content: string): boolean {
+  // 检查是否包含HTML标签
+  const htmlPattern = /<[a-z][\s\S]*>/i;
+  return htmlPattern.test(content);
+}
+
+/**
+ * 将纯文本转换为HTML格式
+ * - 自动将换行符转换为段落
+ * - 保留空行作为段落分隔
+ */
+function textToHtml(text: string): string {
+  if (!text) return '';
+
+  // 分割为段落（以双换行或单换行为分隔）
+  const paragraphs = text
+    .split(/\n\s*\n/) // 先按双换行分割
+    .map(p => p.trim())
+    .filter(p => p.length > 0)
+    .flatMap(p => {
+      // 如果段落内有单换行，也作为分段处理
+      const lines = p.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      return lines;
+    });
+
+  // 转换为HTML段落
+  return paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+}
+
+/**
+ * 转义HTML特殊字符
+ */
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, char => map[char]);
+}
+
+/**
+ * 格式化内容（智能处理HTML和纯文本）
+ * - 如果内容已经是HTML格式，保持原样
+ * - 如果是纯文本，自动将换行符转换为段落
+ */
+export function formatContent(content: string): string {
+  if (!content) return '';
+
+  // 如果已经是HTML格式，直接返回
+  if (isHtmlContent(content)) {
+    return content;
+  }
+
+  // 否则将纯文本转换为HTML
+  return textToHtml(content);
+}
+
+/**
  * 清理并渲染HTML内容
  * 用于 dangerouslySetInnerHTML
+ * 自动处理纯文本换行
  */
 export function createSafeHtml(html: string): { __html: string } {
+  // 先格式化内容（处理纯文本换行），再消毒
+  const formattedContent = formatContent(html);
   return {
-    __html: sanitizeHtml(html),
+    __html: sanitizeHtml(formattedContent),
   };
 }
 
