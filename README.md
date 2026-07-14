@@ -35,6 +35,9 @@
 ### 👀 只查看模式（默认）
 
 直接访问网站即可浏览所有内容，无需特殊操作：
+
+**访问地址**：https://russiamsun.github.io/personal-growth-timeline/
+
 - 查看所有活动、问题和反思
 - 浏览时光轴和统计信息
 - 查看活动详情
@@ -45,9 +48,7 @@
 
 需要进行数据编辑时，使用特殊的编辑URL：
 
-```
-https://你的域名/personal-growth-timeline/?edit=emma2024
-```
+**编辑地址**：https://russiamsun.github.io/personal-growth-timeline/?edit=emma2024
 
 进入编辑模式后：
 - 显示所有创建/编辑/删除按钮
