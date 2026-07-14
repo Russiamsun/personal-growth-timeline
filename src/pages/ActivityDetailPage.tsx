@@ -1,18 +1,22 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Tag, ArrowLeft, Image } from 'lucide-react';
+import { Calendar, MapPin, Tag, ArrowLeft, Image, Languages } from 'lucide-react';
 import { Activity, ActivityTypeConfig, ActivityType, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { createSafeHtml, sanitizeImageUrl } from '@/utils/sanitize';
 import { getTitle, getDescription, getLocation, getContent, getTags, getActivityTypeLabel } from '@/utils/bilingualHelpers';
 import { formatDateByLang } from '@/utils/dateUtils';
+import { translateText } from '@/utils/translate';
+import { useState } from 'react';
 
 export default function ActivityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { activities } = useData();
+  const { activities, updateActivity } = useData();
   const { language, t } = useLanguage();
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
 
   const activity = activities.find(a => a.id === id);
 
@@ -41,6 +45,31 @@ export default function ActivityDetailPage() {
   }
 
   const config = ActivityTypeConfig[activity.type];
+
+  // 翻译内容
+  const handleTranslateContent = async () => {
+    if (!activity.contentZh && !activity.contentEn) return;
+
+    setIsTranslating(true);
+    try {
+      const sourceText = language === 'zh' ? activity.contentEn || activity.contentZh : activity.contentZh || activity.contentEn;
+      const targetLang = language === 'zh' ? 'en' : 'zh';
+      const sourceLang = language === 'zh' ? 'en' : 'zh';
+
+      const translated = await translateText(sourceText, sourceLang, targetLang);
+      setTranslatedContent(translated);
+    } catch (error) {
+      console.error('翻译失败:', error);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // 获取显示的内容
+  const getDisplayContent = () => {
+    if (translatedContent) return translatedContent;
+    return getContent(activity, language);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 py-8">
@@ -185,11 +214,34 @@ export default function ActivityDetailPage() {
 
             {/* 活动内容 */}
             <div className="px-6 md:px-10 pb-10">
-              <div className="mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5 text-orange-500" />
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {t.form.activityDetails}
-                </h2>
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-orange-500" />
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {t.form.activityDetails}
+                  </h2>
+                </div>
+                {/* 翻译按钮 */}
+                {((language === 'zh' && !activity.contentEn) || (language === 'en' && !activity.contentZh)) && (
+                  <motion.button
+                    onClick={handleTranslateContent}
+                    disabled={isTranslating}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {isTranslating ? (
+                      <motion.div
+                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      />
+                    ) : (
+                      <Languages className="w-4 h-4" />
+                    )}
+                    <span>{language === 'zh' ? '翻译成英文' : '翻译成中文'}</span>
+                  </motion.button>
+                )}
               </div>
 
               <motion.div
@@ -200,7 +252,7 @@ export default function ActivityDetailPage() {
               >
                 <div
                   className="text-gray-700 leading-relaxed space-y-4"
-                  dangerouslySetInnerHTML={createSafeHtml(getContent(activity, language))}
+                  dangerouslySetInnerHTML={createSafeHtml(getDisplayContent())}
                 />
               </motion.div>
             </div>
