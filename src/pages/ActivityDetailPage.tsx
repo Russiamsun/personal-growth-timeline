@@ -26,7 +26,7 @@ export default function ActivityDetailPage() {
         >
           <div className="text-orange-400 text-6xl mb-4">🔍</div>
           <p className="text-gray-600 text-lg mb-4">
-            {language === 'zh' ? '找不到活动详情' : 'Activity not found'}
+            {t.form.activityNotFound}
           </p>
           <motion.button
             onClick={() => navigate('/experiences')}
@@ -58,7 +58,7 @@ export default function ActivityDetailPage() {
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">
-              {language === 'zh' ? '返回活动列表' : 'Back to Activities'}
+              {t.form.backToActivities}
             </span>
           </motion.button>
         </motion.div>
@@ -134,7 +134,7 @@ export default function ActivityDetailPage() {
                 <div className="mb-4 flex items-center gap-2">
                   <Image className="w-5 h-5 text-orange-500" />
                   <h2 className="text-lg font-semibold text-gray-800">
-                    {language === 'zh' ? '活动照片' : 'Activity Photos'}
+                    {t.form.activityPhotos}
                   </h2>
                   <span className="text-sm text-gray-500">({activity.photos.length})</span>
                 </div>
@@ -168,7 +168,7 @@ export default function ActivityDetailPage() {
                             {photo.caption}
                           </p>
                           <p className="text-orange-400 text-xs mt-1">
-                            {language === 'zh' ? '照片待上传' : 'Photo to be uploaded'}
+                            {t.form.photoToUpload}
                           </p>
                         </div>
                       )}
@@ -188,7 +188,7 @@ export default function ActivityDetailPage() {
               <div className="mb-4 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-orange-500" />
                 <h2 className="text-lg font-semibold text-gray-800">
-                  {language === 'zh' ? '活动详情' : 'Activity Details'}
+                  {t.form.activityDetails}
                 </h2>
               </div>
 
