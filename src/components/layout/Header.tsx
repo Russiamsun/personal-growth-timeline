@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Home, Globe, HelpCircle, BookOpen, Clock, Languages, BarChart2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Home, Globe, HelpCircle, BookOpen, Clock, Languages, BarChart2, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function Header() {
   const { t, language, toggleLanguage } = useLanguage();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
     { path: '/', label: t.nav.home, icon: Home },
@@ -45,8 +47,8 @@ export function Header() {
             </div>
           </motion.div>
 
-          {/* 导航链接和语言切换 */}
-          <div className="flex items-center gap-1">
+          {/* 桌面端导航链接和语言切换 */}
+          <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -124,7 +126,69 @@ export function Header() {
               </div>
             </motion.button>
           </div>
+
+          {/* 移动端汉堡菜单按钮 */}
+          <motion.button
+            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </motion.button>
         </div>
+
+        {/* 移动端下拉菜单 */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden overflow-hidden"
+            >
+              <div className="py-2 space-y-1">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'block px-4 py-3 rounded-lg transition-all duration-300',
+                        'flex items-center gap-3',
+                        isActive
+                          ? 'text-purple-600 font-semibold bg-purple-50'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon className="w-5 h-5" />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+
+                {/* 移动端语言切换按钮 */}
+                <motion.button
+                  onClick={() => {
+                    toggleLanguage();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500"
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Languages className="w-5 h-5" />
+                  <span>{language === 'zh' ? '切换至英文' : 'Switch to Chinese'}</span>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
     </motion.header>
   );

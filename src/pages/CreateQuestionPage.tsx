@@ -4,16 +4,17 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, Calendar, Tag, HelpCircle, Sparkles } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-
-type InputMode = 'both' | 'zh' | 'en';
+import { useBilingualForm } from '@/hooks/useBilingualForm';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import { InputModeSelector, BilingualInputField, TextInput, TextArea } from '@/components/forms/FormFields';
 
 export default function CreateQuestionPage() {
   const navigate = useNavigate();
   const { addQuestion } = useData();
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [inputMode, setInputMode] = useState<InputMode>('both');
+  const { inputMode, setInputMode } = useBilingualForm('both');
+  const { errors, validate, clearError } = useFormValidation();
 
   const [formData, setFormData] = useState({
     questionZh: '',
@@ -25,25 +26,30 @@ export default function CreateQuestionPage() {
     tagsEn: '',
   });
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.questionZh.trim() && !formData.questionEn.trim()) {
-      newErrors.question = t.form.errorQuestion;
-    }
-
-    if (!formData.date) {
-      newErrors.date = t.form.errorDate;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validationRules = {
+    question: {
+      required: true,
+      message: t.form.errorQuestion,
+      custom: () => !!(formData.questionZh.trim() || formData.questionEn.trim()),
+    },
+    date: {
+      required: true,
+      message: t.form.errorDate,
+    },
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    const isValid = validate(
+      {
+        question: formData.questionZh || formData.questionEn,
+        date: formData.date,
+      },
+      validationRules
+    );
+
+    if (!isValid) {
       return;
     }
 
@@ -81,11 +87,7 @@ export default function CreateQuestionPage() {
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      clearError(field);
     }
   };
 
@@ -132,139 +134,47 @@ export default function CreateQuestionPage() {
 
           <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
             {/* 输入模式切换 */}
-            <div className="flex gap-2 border-b border-gray-200 pb-4">
-              <button
-                type="button"
-                onClick={() => setInputMode('both')}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  inputMode === 'both'
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t.form.inputBoth}
-              </button>
-              <button
-                type="button"
-                onClick={() => setInputMode('zh')}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  inputMode === 'zh'
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t.form.inputZh}
-              </button>
-              <button
-                type="button"
-                onClick={() => setInputMode('en')}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  inputMode === 'en'
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t.form.inputEn}
-              </button>
-            </div>
+            <InputModeSelector
+              value={inputMode}
+              onChange={setInputMode}
+              labels={{
+                both: t.form.inputBoth,
+                zh: t.form.inputZh,
+                en: t.form.inputEn,
+              }}
+              colorScheme="violet"
+            />
 
             {/* 问题 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <HelpCircle className="w-4 h-4 inline mr-2 text-violet-500" />
-                {t.form.question} <span className="text-red-500">*</span>
-              </label>
-              {inputMode === 'both' ? (
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.questionZh}</label>
-                    <input
-                      type="text"
-                      value={formData.questionZh}
-                      onChange={(e) => handleChange('questionZh', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                        errors.question ? 'border-red-500' : 'border-gray-200 hover:border-violet-300'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.questionEn}</label>
-                    <input
-                      type="text"
-                      value={formData.questionEn}
-                      onChange={(e) => handleChange('questionEn', e.target.value)}
-                      className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                        errors.question ? 'border-red-500' : 'border-gray-200 hover:border-violet-300'
-                      }`}
-                    />
-                  </div>
-                </div>
-              ) : inputMode === 'zh' ? (
-                <input
-                  type="text"
-                  value={formData.questionZh}
-                  onChange={(e) => handleChange('questionZh', e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                    errors.question ? 'border-red-500' : 'border-gray-200 hover:border-violet-300'
-                  }`}
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={formData.questionEn}
-                  onChange={(e) => handleChange('questionEn', e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                    errors.question ? 'border-red-500' : 'border-gray-200 hover:border-violet-300'
-                  }`}
-                />
-              )}
-              {errors.question && (
-                <p className="text-red-500 text-sm mt-1">{errors.question}</p>
-              )}
-            </div>
+            <BilingualInputField
+              label={`${t.form.question}`}
+              labelZh={t.form.questionZh}
+              labelEn={t.form.questionEn}
+              valueZh={formData.questionZh}
+              valueEn={formData.questionEn}
+              onChangeZh={(value) => handleChange('questionZh', value)}
+              onChangeEn={(value) => handleChange('questionEn', value)}
+              inputMode={inputMode}
+              type="text"
+              error={errors.question}
+              required
+              colorScheme="violet"
+            />
 
             {/* 思考内容 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t.form.thoughts}
-              </label>
-              {inputMode === 'both' ? (
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.thoughtsZh}</label>
-                    <textarea
-                      value={formData.thoughtsZh}
-                      onChange={(e) => handleChange('thoughtsZh', e.target.value)}
-                      rows={6}
-                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.thoughtsEn}</label>
-                    <textarea
-                      value={formData.thoughtsEn}
-                      onChange={(e) => handleChange('thoughtsEn', e.target.value)}
-                      rows={6}
-                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-                    />
-                  </div>
-                </div>
-              ) : inputMode === 'zh' ? (
-                <textarea
-                  value={formData.thoughtsZh}
-                  onChange={(e) => handleChange('thoughtsZh', e.target.value)}
-                  rows={6}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-                />
-              ) : (
-                <textarea
-                  value={formData.thoughtsEn}
-                  onChange={(e) => handleChange('thoughtsEn', e.target.value)}
-                  rows={6}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-                />
-              )}
-            </div>
+            <BilingualInputField
+              label={t.form.thoughts}
+              labelZh={t.form.thoughtsZh}
+              labelEn={t.form.thoughtsEn}
+              valueZh={formData.thoughtsZh}
+              valueEn={formData.thoughtsEn}
+              onChangeZh={(value) => handleChange('thoughtsZh', value)}
+              onChangeEn={(value) => handleChange('thoughtsEn', value)}
+              inputMode={inputMode}
+              type="textarea"
+              rows={6}
+              colorScheme="violet"
+            />
 
             {/* 日期 */}
             <div>
@@ -272,62 +182,28 @@ export default function CreateQuestionPage() {
                 <Calendar className="w-4 h-4 inline mr-2 text-violet-500" />
                 {t.form.date} <span className="text-red-500">*</span>
               </label>
-              <input
+              <TextInput
                 type="date"
                 value={formData.date}
-                onChange={(e) => handleChange('date', e.target.value)}
-                className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                  errors.date ? 'border-red-500' : 'border-gray-200 hover:border-violet-300'
-                }`}
+                onChange={(value) => handleChange('date', value)}
+                error={errors.date}
+                colorScheme="violet"
               />
-              {errors.date && (
-                <p className="text-red-500 text-sm mt-1">{errors.date}</p>
-              )}
             </div>
 
             {/* 标签 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Tag className="w-4 h-4 inline mr-2 text-violet-500" />
-                {t.form.tags}
-              </label>
-              {inputMode === 'both' ? (
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.tagsZh}</label>
-                    <input
-                      type="text"
-                      value={formData.tagsZh}
-                      onChange={(e) => handleChange('tagsZh', e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.tagsEn}</label>
-                    <input
-                      type="text"
-                      value={formData.tagsEn}
-                      onChange={(e) => handleChange('tagsEn', e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    />
-                  </div>
-                </div>
-              ) : inputMode === 'zh' ? (
-                <input
-                  type="text"
-                  value={formData.tagsZh}
-                  onChange={(e) => handleChange('tagsZh', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={formData.tagsEn}
-                  onChange={(e) => handleChange('tagsEn', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-violet-300 transition-all focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              )}
-            </div>
+            <BilingualInputField
+              label={t.form.tags}
+              labelZh={t.form.tagsZh}
+              labelEn={t.form.tagsEn}
+              valueZh={formData.tagsZh}
+              valueEn={formData.tagsEn}
+              onChangeZh={(value) => handleChange('tagsZh', value)}
+              onChangeEn={(value) => handleChange('tagsEn', value)}
+              inputMode={inputMode}
+              type="text"
+              colorScheme="violet"
+            />
 
             {/* 提交按钮 */}
             <div className="flex justify-end gap-3 pt-4">

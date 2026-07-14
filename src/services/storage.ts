@@ -9,9 +9,85 @@ import { supabase } from '@/lib/supabase';
 const BUCKET_NAME = 'activity-photos';
 
 /**
- * 上传图片到Supabase Storage
+ * 快速压缩图片为Blob
  * @param file 图片文件
- * @param folderPath 文件夹路径（可选，用于分类存储）
+ * @param maxSizeKB 最大大小KB（默认500KB）
+ * @returns 压缩后的Blob
+ */
+async function fastCompressImage(file: File, maxSizeKB: number = 500): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+
+    img.onload = () => {
+      try {
+        let quality = 0.8;
+        let width = img.width;
+        let height = img.height;
+
+        // 限制最大尺寸为1200px
+        const maxDimension = 1200;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // 尝试压缩到目标大小
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const sizeKB = blob.size / 1024;
+              console.log(`[快速压缩] ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ${sizeKB.toFixed(0)}KB`);
+              resolve(blob);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/jpeg',
+          quality
+        );
+      } catch (error) {
+        console.warn('[快速压缩] 压缩失败，使用原图');
+        resolve(file);
+      }
+    };
+
+    img.onerror = () => {
+      resolve(file);
+    };
+
+    reader.onerror = () => {
+      resolve(file);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * 快速上传图片到Supabase Storage（带压缩）
+ * @param file 图片文件
+ * @param folderPath 文件夹路径（可选）
  * @returns 上传成功后的图片公开URL
  */
 export async function uploadImageToStorage(
@@ -19,21 +95,25 @@ export async function uploadImageToStorage(
   folderPath?: string
 ): Promise<{ url: string; path: string }> {
   try {
-    // 生成唯一文件名（避免重名冲突）
+    // 快速压缩图片（大于100KB才压缩）
+    let uploadFile: File | Blob = file;
+    if (file.size > 100 * 1024) {
+      uploadFile = await fastCompressImage(file, 500);
+    }
+
+    // 生成唯一文件名
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 9);
     const fileExtension = file.name.split('.').pop() || 'jpg';
     const fileName = `${timestamp}-${randomString}.${fileExtension}`;
-
-    // 构建完整路径
     const fullPath = folderPath ? `${folderPath}/${fileName}` : fileName;
 
     // 上传文件到Storage
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
-      .upload(fullPath, file, {
-        cacheControl: '3600', // 缓存1小时
-        upsert: false, // 不覆盖已存在的文件
+      .upload(fullPath, uploadFile, {
+        cacheControl: '3600',
+        upsert: false,
       });
 
     if (error) {
@@ -45,11 +125,6 @@ export async function uploadImageToStorage(
     const { data: urlData } = supabase.storage
       .from(BUCKET_NAME)
       .getPublicUrl(data.path);
-
-    console.log('[Storage] 上传成功:', {
-      path: data.path,
-      url: urlData.publicUrl,
-    });
 
     return {
       url: urlData.publicUrl,

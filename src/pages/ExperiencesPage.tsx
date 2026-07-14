@@ -5,6 +5,7 @@ import { Calendar, MapPin, Sparkles, Heart, Plus, Edit, Trash2 } from 'lucide-re
 import { Activity, ActivityTypeConfig, ActivityType, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useEditMode } from '@/contexts/EditModeContext';
 import { ConfirmDialog, useConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ActivityFilter } from '@/components/common/ActivityFilter';
 import { getTitle, getDescription, getLocation, getTags, getActivityTypeLabel } from '@/utils/bilingualHelpers';
@@ -15,6 +16,7 @@ export default function ExperiencesPage() {
   const navigate = useNavigate();
   const { activities, deleteActivity } = useData();
   const { language, t } = useLanguage();
+  const { isEditMode } = useEditMode();
   const { confirm, dialogProps } = useConfirmDialog();
 
   // 筛选后的活动列表
@@ -68,26 +70,28 @@ export default function ExperiencesPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-12"
+          className="mb-8 md:mb-12"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-orange-500" />
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3 md:mb-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-orange-500" />
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800">
                 {t.nav.experiences}
               </h1>
             </div>
-            <motion.button
-              onClick={() => navigate('/activity/create')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Plus className="w-5 h-5" />
-              <span>{t.experiences.createNew}</span>
-            </motion.button>
+            {isEditMode && (
+              <motion.button
+                onClick={() => navigate('/activity/create')}
+                className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all text-sm md:text-base"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                <span>{t.experiences.createNew}</span>
+              </motion.button>
+            )}
           </div>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 text-sm md:text-lg">
             {t.experiences.subtitle}
           </p>
         </motion.div>
@@ -110,25 +114,25 @@ export default function ExperiencesPage() {
               className="mb-12"
             >
               {/* 类型标题 */}
-              <div className="mb-6">
-                <div className="flex items-center gap-3">
+              <div className="mb-4 md:mb-6">
+                <div className="flex items-center gap-2 md:gap-3">
                   <motion.div
-                    className="w-10 h-10 rounded-full bg-gradient-to-r from-orange-400 to-amber-400 flex items-center justify-center shadow-lg"
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-orange-400 to-amber-400 flex items-center justify-center shadow-lg"
                     whileHover={{ scale: 1.1, rotate: 10 }}
                   >
-                    <span className="text-xl">{config.icon}</span>
+                    <span className="text-lg md:text-xl">{config.icon}</span>
                   </motion.div>
-                  <h2 className="text-xl md:text-2xl font-semibold text-gray-700">
+                  <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-gray-700">
                     {getActivityTypeLabel(type as ActivityType, t)}
                   </h2>
-                  <span className="text-sm text-gray-500 bg-orange-100 px-3 py-1 rounded-full">
+                  <span className="text-xs md:text-sm text-gray-500 bg-orange-100 px-2 md:px-3 py-0.5 md:py-1 rounded-full">
                     {activities.length}
                   </span>
                 </div>
               </div>
 
               {/* 活动卡片 - 照片网格布局 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                 {activities.map((activity, index) => (
                   <motion.div
                     key={activity.id}
@@ -225,35 +229,37 @@ export default function ExperiencesPage() {
                             <span className="text-sm">{t.common.clickToView}</span>
                           </motion.div>
 
-                          {/* 操作按钮 */}
-                          <div className="flex items-center gap-2 pointer-events-auto">
-                            <motion.button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                navigate(`/activity/edit/${activity.id}`);
-                              }}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative z-10 cursor-pointer"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <Edit className="w-5 h-5 pointer-events-none" />
-                            </motion.button>
-                            <motion.button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleDelete(activity.id, activity);
-                              }}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors relative z-10 cursor-pointer"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <Trash2 className="w-5 h-5 pointer-events-none" />
-                            </motion.button>
-                          </div>
+                          {/* 操作按钮 - 仅编辑模式显示 */}
+                          {isEditMode && (
+                            <div className="flex items-center gap-2 pointer-events-auto">
+                              <motion.button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  navigate(`/activity/edit/${activity.id}`);
+                                }}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative z-10 cursor-pointer"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Edit className="w-5 h-5 pointer-events-none" />
+                              </motion.button>
+                              <motion.button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleDelete(activity.id, activity);
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors relative z-10 cursor-pointer"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <Trash2 className="w-5 h-5 pointer-events-none" />
+                              </motion.button>
+                            </div>
+                          )}
                         </div>
                       </div>
 

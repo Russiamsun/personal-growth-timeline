@@ -11,6 +11,7 @@
     "check": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@sentry/react": "^10.65.0",
     "@supabase/supabase-js": "^2.110.0",
     "@types/dompurify": "^3.0.5",
     "clsx": "^2.1.1",

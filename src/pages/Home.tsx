@@ -143,9 +143,9 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1.5, duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-6 py-3 border border-white/20">
-              <Heart className="w-5 h-5 text-white" />
-              <span className="text-white text-sm font-medium">{t.home.ageBadge} · Phase 1 · Growth Observation</span>
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 md:px-6 py-2 md:py-3 border border-white/20">
+              <Heart className="w-4 h-4 md:w-5 md:h-5 text-white" />
+              <span className="text-white text-xs md:text-sm font-medium">{t.home.ageBadge} · Phase 1 · Growth Observation</span>
             </div>
           </motion.div>
         </div>

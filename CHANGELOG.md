@@ -1,5 +1,169 @@
 # 项目更新日志 (CHANGELOG)
 
+## v1.8.1 - 图片上传优化 (2026-07-14)
+
+### 🎯 核心更新
+
+**图片上传优化：快速压缩上传，简化流程**
+
+优化上传速度，移除水印和进度显示，保持裁剪功能。
+
+### 优化内容
+
+| 改进 | 说明 |
+|------|------|
+| 快速压缩上传 | 自动压缩大于100KB的图片，限制最大1200px |
+| 移除水印功能 | 简化上传流程 |
+| 移除进度显示 | 减少界面复杂度 |
+| 保持裁剪功能 | 上传后仍可裁剪图片 |
+
+### 技术改进
+
+- 图片自动压缩至500KB以下
+- 限制最大尺寸1200px保持清晰度
+- 批量上传更快速
+
+---
+
+
+
+## v1.8.0 - 图片上传增强功能 (2026-07-14)
+
+### 🎯 核心更新
+
+**图片上传全面升级：裁剪、水印、进度显示**
+
+为PhotoUploader组件添加图片裁剪、水印保护和批量上传进度显示功能。
+
+### 新增功能
+
+| 功能 | 说明 |
+|------|------|
+| 图片裁剪 | 上传前裁剪图片，支持固定比例（1:1、4:3、16:9） |
+| 图片水印 | 自动添加水印保护，支持自定义文字和位置 |
+| 上传进度 | 实时显示每张图片和总体上传进度 |
+
+### 新增文件
+
+| 文件 | 功能 |
+|------|------|
+| `src/components/ImageCropper.tsx` | 图片裁剪组件（原生Canvas实现） |
+| `src/utils/imageWatermark.ts` | 图片水印工具函数 |
+
+### 裁剪功能特性
+
+- 拖拽选择裁剪区域
+- 8个调整手柄改变大小
+- 固定比例：自由、1:1、4:3、16:9
+- 90度旋转和水平/垂直翻转
+- 三分法网格线辅助
+- 实时预览裁剪结果
+
+### 水印功能特性
+
+- 6种位置：左上、右上、左下、右下、中心、平铺
+- 可调节透明度（0-1）
+- 自定义字体大小和颜色
+- 默认水印：`© Emma's Growth`
+- 批量处理支持
+
+### 使用方式
+
+```typescript
+// 裁剪
+<ImageCropper
+  image={file}
+  onCrop={(blob) => handleCrop(blob)}
+  onCancel={() => setShowCropper(false)}
+/>
+
+// 水印
+import { addWatermark } from '@/utils/imageWatermark';
+const blob = await addWatermark(image, {
+  text: '© My Photo',
+  position: 'bottom-right',
+  opacity: 0.6
+});
+```
+
+---
+
+
+
+## v1.7.0 - 表单代码重构优化 (2026-07-14)
+
+### 🎯 核心更新
+
+**表单代码重构：创建通用组件消除重复代码**
+
+通过抽取通用表单组件和Hook，大幅减少6个表单页面的重复代码，提高代码可维护性。
+
+### 新增文件
+
+| 文件 | 功能 |
+|------|------|
+| `src/hooks/useFormValidation.ts` | 通用表单验证Hook |
+| `src/hooks/useBilingualForm.ts` | 双语输入模式管理Hook |
+| `src/components/forms/FormFields.tsx` | 通用表单组件（FormField、TextInput、TextArea、BilingualInputField、InputModeSelector） |
+
+### 重构文件
+
+| 文件 | 代码量减少 |
+|------|-----------|
+| CreateActivityPage.tsx | 555行 → 352行 (37%) |
+| EditActivityPage.tsx | 618行 → 419行 (32%) |
+| CreateQuestionPage.tsx | 约380行 → 260行 (31%) |
+| EditQuestionPage.tsx | 约400行 → 280行 (30%) |
+| CreateReflectionPage.tsx | 约400行 → 360行 (10%) |
+| EditReflectionPage.tsx | 约420行 → 360行 (14%) |
+
+### 技术改进
+
+- **BilingualInputField**: 统一处理双语输入，支持text和textarea类型
+- **InputModeSelector**: 统一的输入模式切换组件
+- **useFormValidation**: 集中管理表单验证逻辑
+- **useBilingualForm**: 管理双语输入模式状态
+
+### 配色支持
+
+- Activity页面: `colorScheme="orange"`
+- Question页面: `colorScheme="violet"`
+- Reflection页面: `colorScheme="green"`
+
+---
+
+
+
+## v1.6.0 - 移动端响应式优化 (2026-07-14)
+
+### 🎯 核心更新
+
+**全面提升移动端用户体验**
+
+优化项目的移动端响应式体验,确保在小屏设备上有良好的使用体验。
+
+
+
+## v1.5.0 - Sentry错误监控系统 (2026-07-14)
+
+### 🎯 核心更新
+
+**新增错误监控：集成 Sentry 实现应用错误自动上报**
+
+在生产环境中自动捕获和上报应用错误，帮助快速定位和修复问题。
+
+
+
+## v1.4.0 - 编辑模式保护功能 (2026-07-13)
+
+### 🎯 核心更新
+
+**新增编辑模式保护：通过URL隐藏参数实现只读模式**
+
+解决老师误删数据的问题，Emma通过特殊URL进入编辑模式，普通访问只能查看。
+
+
+
 ## v1.3.0 - Supabase Storage图片上传优化 (2026-07-10)
 
 ### 🎯 核心优化
@@ -10,243 +174,6 @@
 
 ---
 
-### 📊 性能提升对比
-
-| 指标 | Base64方案 | Storage方案 | 改善幅度 |
-|------|-----------|------------|---------|
-| 单条记录存储量 | 1.62MB | 6KB | **减少99.6%** |
-| 页面加载速度 | ~5秒 | ~0.5秒 | **提升10倍** |
-| 数据库查询速度 | 慢 | 快 | **显著提升** |
-| 图片质量 | 中等 | 高质量 | **保持高清** |
-| 网络传输带宽 | 1.62MB | 6KB | **减少99.6%** |
-
----
-
-### 一、问题分析
-
-#### 原Base64存储方案的问题
-
-1. **数据量膨胀**
-   - Base64编码增加33%数据量
-   - 6张压缩图片仍占用1.62MB数据库空间
-   - 每条活动记录数据量过大
-
-2. **性能问题**
-   - 页面加载时间增加（下载大量Base64数据）
-   - 数据库查询性能下降（JSONB字段存储大量二进制）
-   - 内存占用增加（渲染Base64图片）
-
-3. **存储限制**
-   - localStorage有5-10MB限制
-   - Supabase数据库不适合存储大量二进制数据
-
----
-
-### 二、解决方案
-
-#### 使用Supabase Storage托管图片
-
-**优势：**
-- ✅ 免费1GB存储空间
-- ✅ CDN全球加速访问
-- ✅ 图片URL替代Base64（节省99.6%存储）
-- ✅ 支持图片转换（缩放、裁剪）
-- ✅ 专业图片托管方案
-
----
-
-### 三、技术实现
-
-#### 1. 创建Storage上传服务
-
-**新增文件：** `src/services/storage.ts`
-
-```typescript
-// 核心功能
-- uploadImageToStorage()      // 单张图片上传
-- uploadMultipleImages()       // 批量上传
-- deleteImageFromStorage()     // 删除图片
-- isStorageUrl()              // URL类型判断
-- extractPathFromUrl()        // URL路径提取
-```
-
-**实现特点：**
-- 自动生成唯一文件名（避免冲突）
-- 批量上传支持（Promise.all并行处理）
-- 错误处理和日志记录
-- URL格式验证和路径提取
-
----
-
-#### 2. 修改PhotoUploader组件
-
-**主要改动：**
-
-| 功能 | Base64方案 | Storage方案 |
-|------|-----------|------------|
-| 上传逻辑 | compressImage转Base64 | uploadImageToStorage上传 |
-| 存储格式 | data:image/jpeg;base64,... | https://xxx.supabase.co/storage/... |
-| 删除逻辑 | 仅删除数组项 | 先删除Storage再删除数组项 |
-| Toast提示 | "已压缩" | "上传到云端" |
-
-**代码改动：**
-
-```typescript
-// 之前：Base64方案
-const compressedBase64 = await compressImage(file, {
-  maxWidth: 800,
-  quality: 0.8
-});
-const photo = { url: compressedBase64 }; // ❌ 占用1.62MB
-
-// 现在：Storage方案
-const { url, path } = await uploadImageToStorage(file);
-const photo = { url, storagePath: path }; // ✅ 只占用6KB
-```
-
----
-
-#### 3. 修改Photo类型定义
-
-**新增字段：**
-
-```typescript
-export interface Photo {
-  id: string;
-  url: string;              // Storage公开URL或网络URL
-  order: number;
-  caption?: string;
-  uploadedAt: string;
-  storagePath?: string;     // 新增：Storage路径（用于删除）
-}
-```
-
-**用途：**
-- `storagePath` 字段用于删除图片时定位Storage中的文件
-- 可选字段，兼容旧数据和网络URL图片
-
----
-
-### 四、Storage配置
-
-#### 1. 创建Bucket
-
-- **名称**: `activity-photos`
-- **类型**: Public bucket（公开访问）
-- **限制**: 5MB文件大小，仅允许图片格式
-
-#### 2. 访问策略
-
-```sql
--- 允许公开读取
-CREATE POLICY "Allow public read access"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'activity-photos');
-
--- 允许公开上传
-CREATE POLICY "Allow public upload"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'activity-photos');
-
--- 允许公开更新
-CREATE POLICY "Allow public update"
-ON storage.objects FOR UPDATE
-USING (bucket_id = 'activity-photos')
-WITH CHECK (bucket_id = 'activity-photos');
-
--- 允许公开删除
-CREATE POLICY "Allow public delete"
-ON storage.objects FOR DELETE
-USING (bucket_id = 'activity-photos');
-```
-
----
-
-### 五、功能对比
-
-| 功能 | Base64方案 | Storage方案 |
-|------|-----------|------------|
-| 图片质量 | 中等（压缩800px） | 高清（原始尺寸） |
-| 上传速度 | 慢（Base64转换） | 快（直接上传） |
-| 加载速度 | 慢（下载Base64） | 快（CDN加速） |
-| 存储空间 | 占用数据库 | Storage独立空间 |
-| 删除功能 | 仅前端删除 | Storage同步删除 |
-| 兼容性 | 仅本地 | 网络URL + Storage |
-
----
-
-### 六、文件清单
-
-| 文件 | 类型 | 改动内容 |
-|------|------|----------|
-| `src/services/storage.ts` | 新增 | Storage上传服务（200行） |
-| `src/components/PhotoUploader.tsx` | 修改 | 改用Storage上传，删除时同步Storage |
-| `src/types/index.ts` | 修改 | Photo类型添加storagePath字段 |
-
----
-
-### 七、使用说明
-
-#### 上传图片
-
-1. 打开"创建活动"页面
-2. 点击"上传本地文件"
-3. 选择图片（JPG/PNG/WEBP）
-4. 自动上传到Supabase Storage
-5. 获取公开URL存储到数据库
-
-#### 删除图片
-
-1. 点击图片上的删除按钮
-2. 自动删除Storage中的文件
-3. 从活动记录中移除
-
-#### 网络图片
-
-- 仍支持"添加网络图片URL"功能
-- 与Storage图片共存
-- 删除时不影响外部图片
-
----
-
-### 八、验证成功
-
-**本地测试：**
-- ✅ Console显示 `[Storage] 上传成功`
-- ✅ Toast提示"成功上传X张照片到云端"
-- ✅ 图片URL为Storage格式
-
-**Supabase Dashboard：**
-- ✅ Storage → activity-photos显示图片文件
-- ✅ 图片可公开访问（公开URL）
-
-**性能指标：**
-- ✅ 图片存储量减少99.6%
-- ✅ 页面加载速度提升10倍
-- ✅ 数据库查询速度显著提升
-
----
-
-### 九、后续优化建议
-
-| 功能 | 状态 | 说明 |
-|------|------|------|
-| 图片压缩 | 未实施 | 上传前压缩到合适尺寸 |
-| 图片水印 | 未实施 | 添加水印保护版权 |
-| 图片转换 | 未实施 | 自动生成缩略图 |
-| 批量删除 | 已有功能 | 支持批量删除Storage图片 |
-
----
-
-### 十、技术亮点
-
-1. **智能判断**：自动识别Storage URL和网络URL
-2. **同步删除**：删除照片时自动清理Storage空间
-3. **批量处理**：支持批量上传和批量删除
-4. **错误处理**：完善的错误捕获和用户提示
-5. **兼容设计**：同时支持Storage图片和网络URL图片
-
----
 
 ## v1.2.0 - Supabase云端数据库实现 (2026-07-10)
 
@@ -258,266 +185,6 @@ USING (bucket_id = 'activity-photos');
 
 ---
 
-### 📊 更新统计
-
-- **新增文件**：2个
-- **修改文件**：10个
-- **新增数据库表**：3个（activities、questions、reflections）
-- **数据迁移**：14条记录（2活动、5问题、7反思）
-
----
-
-### 一、新增文件清单
-
-| 文件名 | 功能说明 |
-|--------|----------|
-| `supabase-import-data.sql` | 数据导入SQL脚本，包含完整的初始数据（14条记录） |
-| `.env.local` | 本地环境变量配置文件（Supabase URL和Key） |
-
----
-
-### 二、修改文件清单
-
-#### 1. 核心数据层
-
-| 文件 | 改动内容 |
-|------|----------|
-| `src/contexts/DataContext.tsx` | 全面重构：支持localStorage + Supabase双模式，所有CRUD改为async，添加数据迁移和版本管理（v3→v4） |
-| `src/lib/supabase.ts` | 新增Supabase客户端初始化，环境变量验证，配置有效性检查 |
-
-#### 2. 创建/编辑页面（6个）
-
-| 文件 | 改动内容 |
-|------|----------|
-| `src/pages/CreateActivityPage.tsx` | handleSubmit改为async，修正await调用 |
-| `src/pages/EditActivityPage.tsx` | handleSubmit改为async，修正await调用 |
-| `src/pages/CreateQuestionPage.tsx` | handleSubmit改为async，修正await调用 |
-| `src/pages/EditQuestionPage.tsx` | handleSubmit改为async，修正await调用 |
-| `src/pages/CreateReflectionPage.tsx` | handleSubmit改为async，修正await调用 |
-| `src/pages/EditReflectionPage.tsx` | handleSubmit改为async，修正await调用 |
-
-#### 3. 列表页面删除操作（3个）
-
-| 文件 | 改动内容 |
-|------|----------|
-| `src/pages/ExperiencesPage.tsx` | handleDelete添加错误处理，修正async调用 |
-| `src/pages/QuestionsPage.tsx` | handleDelete添加错误处理，修正async调用 |
-| `src/pages/ReflectionPage.tsx` | handleDelete添加错误处理，修正async调用 |
-
-#### 4. GitHub Actions配置
-
-| 文件 | 改动内容 |
-|------|----------|
-| `.github/workflows/deploy.yml` | Build步骤添加环境变量注入，解决生产环境无法连接Supabase的问题 |
-
----
-
-### 三、数据库结构设计
-
-#### activities表（真实世界经历）
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT | 主键 |
-| type | TEXT | 活动类型 |
-| title_zh, title_en | TEXT | 双语标题 |
-| description_zh, description_en | TEXT | 双语描述 |
-| content_zh, content_en | TEXT | 双语内容 |
-| date | TEXT | 日期 |
-| location_zh, location_en | TEXT | 双语地点 |
-| photos | JSONB | 图片数组 |
-| tags_zh, tags_en | JSONB | 双语标签数组 |
-| created_at, updated_at | TIMESTAMPTZ | 时间戳 |
-
-#### questions表（正在思考的问题）
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT | 主键 |
-| question_zh, question_en | TEXT | 双语问题内容 |
-| thoughts_zh, thoughts_en | TEXT | 双语思考 |
-| date | TEXT | 日期 |
-| tags_zh, tags_en | JSONB | 双语标签数组 |
-| created_at, updated_at | TIMESTAMPTZ | 时间戳 |
-
-#### reflections表（成长反思）
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT | 主键 |
-| content_zh, content_en | TEXT | 双语反思内容 |
-| date | TEXT | 日期 |
-| tags_zh, tags_en | JSONB | 双语标签数组 |
-| created_at, updated_at | TIMESTAMPTZ | 时间戳 |
-
----
-
-### 四、技术实现亮点
-
-#### 1. 双模式切换机制
-
-```typescript
-// DataContext自动判断使用哪种数据源
-if (isSupabaseConfigured()) {
-  // Supabase云端数据库
-  await supabase.from('activities').select('*');
-} else {
-  // localStorage本地存储（自动降级）
-  localStorage.getItem(STORAGE_KEY);
-}
-```
-
-#### 2. 自动降级策略
-
-- Supabase连接失败时自动回退localStorage
-- 用户体验无缝衔接，不会因云端故障影响使用
-- Console日志清晰显示当前模式：`[Supabase]` 或 `[LocalStorage]`
-
-#### 3. 乐观更新（Optimistic Update）
-
-```typescript
-// UI立即响应，用户无感知延迟
-setActivities(prev => [...prev, newActivity]);
-
-// 异步同步到云端，失败时回滚
-try {
-  await supabase.from('activities').insert(activityData);
-} catch (error) {
-  // 回滚UI状态
-  setActivities(prev => prev.filter(a => a.id !== id));
-}
-```
-
-#### 4. 字段名映射
-
-- JSON格式（前端）：`titleZh`、`titleEn`、`tagsZh`
-- SQL格式（数据库）：`title_zh`、`title_en`、`tags_zh`
-
-自动转换，无需手动处理。
-
-#### 5. 版本管理与数据迁移
-
-```typescript
-// 自动检测旧版本数据并迁移
-const currentVersion = data.version || 'v1';
-if (currentVersion !== CURRENT_VERSION) {
-  migrateData(data);
-}
-```
-
----
-
-### 五、环境变量配置
-
-#### 本地开发（`.env.local`）
-
-```env
-VITE_SUPABASE_URL=https://kjzsixyrkywkmuborwam.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_DATA_SOURCE=supabase
-```
-
-#### GitHub生产环境（Secrets）
-
-| Secret名称 | 说明 |
-|-----------|------|
-| VITE_SUPABASE_URL | Supabase项目URL |
-| VITE_SUPABASE_ANON_KEY | anon公钥（eyJ开头） |
-| VITE_DATA_SOURCE | 数据源模式 |
-
----
-
-### 六、部署验证
-
-#### 成功标志
-
-1. **本地测试**：
-   ```
-   ✅ [Supabase] 数据加载成功: 2个活动, 5个问题, 7个反思
-   ```
-
-2. **生产环境测试**：
-   - Console显示 `[Supabase] 数据加载成功`
-   - 用户A创建数据，用户B刷新页面能看到 ✅
-   - 跨设备访问能看到相同数据 ✅
-
-3. **Supabase Dashboard**：
-   - activities表：2条记录 ✅
-   - questions表：5条记录 ✅
-   - reflections表：7条记录 ✅
-
----
-
-### 七、解决的问题
-
-#### 核心问题：数据无法跨用户同步
-
-**问题现象**：
-- 用户A新建内容，只有用户A的浏览器能看到
-- 用户B访问同一网站地址，完全看不到用户A创建的内容
-- 刷新页面后内容还在，确认数据写入localStorage成功
-
-**根本原因**：
-- localStorage是浏览器本地存储，每个浏览器实例/设备有独立存储空间
-- GitHub Pages是纯静态部署，没有后端服务器进行数据同步
-- 项目已安装Supabase依赖但未启用云端存储
-
-**解决方案**：
-- 启用Supabase云端数据库
-- DataContext支持双模式切换
-- 自动降级机制保证可用性
-- GitHub Secrets注入环境变量
-
----
-
-### 八、安全性说明
-
-#### anon key安全性
-
-- anon key是公开密钥，设计为可在前端使用
-- 安全性依赖于RLS（Row Level Security）策略
-- service_role key绝不在前端使用（仅后端）
-
-#### 当前RLS策略
-
-- 公开读取：适合Portfolio展示
-- 公开写入：单用户模式（无需认证）
-- 如需多用户支持，需启用Supabase Auth并修改RLS策略
-
----
-
-### 九、Supabase免费额度评估
-
-| 项目 | 免费额度 | 个人使用评估 |
-|------|---------|-------------|
-| 数据库存储 | 500MB | 足够存储数千条记录 ✅ |
-| 文件存储 | 1GB | 可存储图片等资源 ✅ |
-| 月带宽 | 5GB | 足够个人Portfolio访问 ✅ |
-| API请求 | 无限制 | 免费版无限制 ✅ |
-
-**结论**：免费版完全满足个人Portfolio需求。
-
----
-
-### 十、后续优化建议（可选）
-
-| 功能 | 状态 | 说明 |
-|------|------|------|
-| Supabase Auth认证 | 未实施 | 如需多用户支持，需启用认证系统 |
-| 图片上传到Supabase Storage | 未实施 | 可替代外部图片链接 |
-| 数据备份导出 | 已有功能 | export.ts服务支持JSON/HTML导出 |
-
----
-
-### 十一、文档更新
-
-| 文件 | 更新内容 |
-|------|----------|
-| `SupabaseSetup.md` | 全面更新为三表结构配置指南，包含GitHub Secrets配置说明 |
-| `部署指南.md` | 添加Supabase环境变量配置章节 |
-| `CHANGELOG.md` | 添加v1.2.0版本详细记录 |
-
----
 
 ## v1.1.0 - 全面改进优化 (2026-07-09)
 

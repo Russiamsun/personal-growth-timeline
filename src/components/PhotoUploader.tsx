@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Image, Plus, Link, ArrowUp, ArrowDown } from 'lucide-react';
+import { Upload, X, Image, Plus, Link, ArrowUp, ArrowDown, Crop } from 'lucide-react';
 import { Photo } from '@/types';
 import { useToast } from '@/contexts/ToastContext';
 import { sanitizeImageUrl } from '@/utils/sanitize';
 import { uploadMultipleImages, deleteImageFromStorage, extractPathFromUrl } from '@/services/storage';
+import { ImageCropper } from './ImageCropper';
 
 interface PhotoUploaderProps {
   photos: Photo[];
@@ -16,6 +17,12 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
   const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
   const [captionInput, setCaptionInput] = useState('');
+
+  // 裁剪功能相关状态
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropImage, setCropImage] = useState<File | string | null>(null);
+  const [cropPhotoId, setCropPhotoId] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
@@ -24,12 +31,13 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
     return `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // 处理文件上传（上传到Supabase Storage）
+  // 处理文件上传（快速上传到Supabase Storage）
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
+
     const validFiles: File[] = [];
 
     // 验证文件类型
@@ -47,21 +55,21 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
     }
 
     try {
-      // 上传图片到Supabase Storage
+      // 快速批量上传图片（自动压缩）
       const uploadResults = await uploadMultipleImages(validFiles);
 
-      // 添加到photos数组（使用Storage URL替代Base64）
+      // 添加到photos数组
       const newPhotos: Photo[] = uploadResults.map((result, index) => ({
         id: generateId(),
-        url: result.url, // 使用Storage公开URL
+        url: result.url,
         order: photos.length + index + 1,
-        caption: result.fileName.replace(/\.[^/.]+$/, ''), // 使用文件名（去掉扩展名）作为caption
+        caption: result.fileName.replace(/\.[^/.]+$/, ''),
         uploadedAt: new Date().toISOString(),
-        storagePath: result.path, // 新增字段：Storage路径（用于删除）
+        storagePath: result.path,
       }));
 
       onChange([...photos, ...newPhotos]);
-      toast.success(`成功上传 ${newPhotos.length} 张照片到云端`);
+      toast.success(`成功上传 ${newPhotos.length} 张照片`);
     } catch (error) {
       console.error('图片上传失败:', error);
       toast.error('图片上传失败，请重试');
@@ -94,7 +102,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
     setCaptionInput('');
   };
 
-  // 删除照片（同时删除Storage中的图片）
+  // 删除照片
   const handleDelete = async (photoId: string) => {
     const photo = photos.find(p => p.id === photoId);
     if (!photo) return;
@@ -104,13 +112,12 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
       const storagePath = extractPathFromUrl(photo.url);
       if (storagePath) {
         await deleteImageFromStorage(storagePath);
-        console.log('[PhotoUploader] 已从Storage删除:', storagePath);
       }
 
       // 从列表中移除
       const updatedPhotos = photos
         .filter(p => p.id !== photoId)
-        .map((p, index) => ({ ...p, order: index + 1 })); // 重新排序
+        .map((p, index) => ({ ...p, order: index + 1 }));
       onChange(updatedPhotos);
     } catch (error) {
       console.error('[PhotoUploader] 删除照片失败:', error);
@@ -125,12 +132,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
 
     const newPhotos = [...photos];
     [newPhotos[index - 1], newPhotos[index]] = [newPhotos[index], newPhotos[index - 1]];
-    
-    // 更新order
-    newPhotos.forEach((p, i) => {
-      p.order = i + 1;
-    });
-    
+    newPhotos.forEach((p, i) => { p.order = i + 1; });
     onChange(newPhotos);
   };
 
@@ -141,13 +143,46 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
 
     const newPhotos = [...photos];
     [newPhotos[index], newPhotos[index + 1]] = [newPhotos[index + 1], newPhotos[index]];
-    
-    // 更新order
-    newPhotos.forEach((p, i) => {
-      p.order = i + 1;
-    });
-    
+    newPhotos.forEach((p, i) => { p.order = i + 1; });
     onChange(newPhotos);
+  };
+
+  // 打开裁剪对话框
+  const handleCropStart = (photoId: string) => {
+    const photo = photos.find(p => p.id === photoId);
+    if (!photo) return;
+
+    setCropImage(photo.url);
+    setCropPhotoId(photoId);
+    setShowCropper(true);
+  };
+
+  // 确认裁剪
+  const handleCropConfirm = async (croppedBlob: Blob) => {
+    if (!cropPhotoId) return;
+
+    try {
+      const croppedUrl = URL.createObjectURL(croppedBlob);
+      const updatedPhotos = photos.map(p =>
+        p.id === cropPhotoId ? { ...p, url: croppedUrl } : p
+      );
+      onChange(updatedPhotos);
+      toast.success('裁剪成功');
+
+      setShowCropper(false);
+      setCropImage(null);
+      setCropPhotoId(null);
+    } catch (error) {
+      console.error('裁剪失败:', error);
+      toast.error('裁剪失败，请重试');
+    }
+  };
+
+  // 取消裁剪
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setCropImage(null);
+    setCropPhotoId(null);
   };
 
   return (
@@ -242,7 +277,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://example.com/photo.jpg 或 picsum.photos链接"
+                placeholder="https://example.com/photo.jpg"
                 className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
@@ -254,7 +289,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
                 type="text"
                 value={captionInput}
                 onChange={(e) => setCaptionInput(e.target.value)}
-                placeholder="例如：活动现场、孩子们合影"
+                placeholder="例如：活动现场"
                 className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
@@ -299,7 +334,6 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
                     alt={photo.caption || '照片'}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      // Base64图片不会失败，只有URL图片可能失败
                       e.currentTarget.src = 'data:image/svg+xml,' + encodeURIComponent(`
                         <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
                           <rect width="200" height="200" fill="#f3f4f6"/>
@@ -320,6 +354,18 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
                     whileHover={{ opacity: 1 }}
                     className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2"
                   >
+                    {/* 裁剪 */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleCropStart(photo.id)}
+                      className="bg-blue-500/90 backdrop-blur-sm p-2 rounded-lg text-white hover:bg-blue-600 transition-colors"
+                      title="裁剪图片"
+                    >
+                      <Crop className="w-4 h-4" />
+                    </motion.button>
+
                     {/* 上移 */}
                     {index > 0 && (
                       <motion.button
@@ -332,7 +378,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
                         <ArrowUp className="w-4 h-4" />
                       </motion.button>
                     )}
-                    
+
                     {/* 下移 */}
                     {index < photos.length - 1 && (
                       <motion.button
@@ -345,7 +391,7 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
                         <ArrowDown className="w-4 h-4" />
                       </motion.button>
                     )}
-                    
+
                     {/* 删除 */}
                     <motion.button
                       type="button"
@@ -372,6 +418,17 @@ export default function PhotoUploader({ photos, onChange }: PhotoUploaderProps) 
           </AnimatePresence>
         </div>
       )}
+
+      {/* 图片裁剪对话框 */}
+      <AnimatePresence>
+        {showCropper && cropImage && (
+          <ImageCropper
+            image={cropImage}
+            onCrop={handleCropConfirm}
+            onCancel={handleCropCancel}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

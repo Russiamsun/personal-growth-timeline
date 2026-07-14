@@ -130,19 +130,21 @@ export default function TimelinePage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 标题 */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-8 md:mb-12"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">{t.timeline.title}</h1>
-          <p className="text-gray-600">{t.timeline.subtitle}</p>
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-3">{t.timeline.title}</h1>
+          <p className="text-sm md:text-base text-gray-600">{t.timeline.subtitle}</p>
         </motion.div>
 
         {/* 时间轴主体 */}
         <div className="relative">
-          {/* 中央时间线 */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-orange-400 via-pink-400 to-purple-400 rounded-full opacity-50"></div>
+          {/* 中央时间线 - 桌面端 */}
+          <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-orange-400 via-pink-400 to-purple-400 rounded-full opacity-50"></div>
+          {/* 左侧时间线 - 移动端 */}
+          <div className="md:hidden absolute left-6 w-1 h-full bg-gradient-to-b from-orange-400 via-pink-400 to-purple-400 rounded-full opacity-50"></div>
 
           <AnimatePresence>
             {sortedGroups.map((group, groupIndex) => (
@@ -181,15 +183,31 @@ export default function TimelinePage() {
                   return (
                     <motion.div
                       key={activity.id}
-                      className="relative flex items-center justify-between mb-12"
+                      className="relative flex items-center justify-between mb-12 md:mb-12"
                       initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
                       animate={isVisible ? { opacity: 1, x: 0 } : { opacity: 0, x: isLeft ? -50 : 50 }}
                       exit={{ opacity: 0, x: isLeft ? -50 : 50 }}
                       transition={{ delay: 0.2, duration: 0.4 }}
                     >
-                      {/* 左侧内容 */}
-                      <div className="w-5/12">
-                        {isLeft ? (
+                      {/* 移动端单列布局 */}
+                      <div className="md:hidden w-full flex items-start gap-4">
+                        {/* 左侧时间轴节点 */}
+                        <div className="relative z-10 flex flex-col items-center flex-shrink-0">
+                          <motion.div
+                            className="w-12 h-12 rounded-full border-4 flex items-center justify-center shadow-lg cursor-pointer bg-white"
+                            style={{ borderColor: config.color }}
+                            whileHover={{ scale: 1.3, rotate: 10 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => navigate(`/activity/${activity.id}`)}
+                          >
+                            <span className="text-xl">{config.icon}</span>
+                          </motion.div>
+                          {/* 时间轴线 */}
+                          <div className="w-1 flex-1 bg-gradient-to-b from-orange-400 to-purple-400 opacity-50 mt-2"></div>
+                        </div>
+
+                        {/* 右侧卡片 */}
+                        <div className="flex-1 pb-8">
                           <ActivityCard
                             activity={activity}
                             config={config}
@@ -197,40 +215,56 @@ export default function TimelinePage() {
                             language={language}
                             t={t}
                           />
-                        ) : (
-                          <TimeInfo date={date} location={getLocation(activity, language)} />
-                        )}
+                        </div>
                       </div>
 
-                      {/* 中间：圆形节点 */}
-                      <div className="relative z-10 flex flex-col items-center">
-                        <motion.div
-                          className="w-14 h-14 rounded-full border-4 flex items-center justify-center shadow-lg cursor-pointer bg-white"
-                          style={{
-                            borderColor: config.color,
-                          }}
-                          whileHover={{ scale: 1.3, rotate: 10 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => navigate(`/activity/${activity.id}`)}
-                        >
-                          <span className="text-2xl">{config.icon}</span>
-                        </motion.div>
-                      </div>
+                      {/* 桌面端双列布局 */}
+                      <>
+                        {/* 左侧内容 */}
+                        <div className="hidden md:block w-5/12">
+                          {isLeft ? (
+                            <ActivityCard
+                              activity={activity}
+                              config={config}
+                              date={date}
+                              language={language}
+                              t={t}
+                            />
+                          ) : (
+                            <TimeInfo date={date} location={getLocation(activity, language)} />
+                          )}
+                        </div>
 
-                      {/* 右侧内容 */}
-                      <div className="w-5/12">
-                        {!isLeft ? (
-                          <ActivityCard
-                            activity={activity}
-                            config={config}
-                            date={date}
-                            language={language}
-                            t={t}
-                          />
-                        ) : (
-                          <TimeInfo date={date} location={getLocation(activity, language)} />
-                        )}
-                      </div>
+                        {/* 中间：圆形节点 */}
+                        <div className="hidden md:flex relative z-10 flex-col items-center">
+                          <motion.div
+                            className="w-14 h-14 rounded-full border-4 flex items-center justify-center shadow-lg cursor-pointer bg-white"
+                            style={{
+                              borderColor: config.color,
+                            }}
+                            whileHover={{ scale: 1.3, rotate: 10 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => navigate(`/activity/${activity.id}`)}
+                          >
+                            <span className="text-2xl">{config.icon}</span>
+                          </motion.div>
+                        </div>
+
+                        {/* 右侧内容 */}
+                        <div className="hidden md:block w-5/12">
+                          {!isLeft ? (
+                            <ActivityCard
+                              activity={activity}
+                              config={config}
+                              date={date}
+                              language={language}
+                              t={t}
+                            />
+                          ) : (
+                            <TimeInfo date={date} location={getLocation(activity, language)} />
+                          )}
+                        </div>
+                      </>
                     </motion.div>
                   );
                 })}
@@ -255,15 +289,15 @@ function ActivityCard({ activity, config, date, language, t }: {
 
   return (
     <motion.div
-      className="bg-white rounded-xl shadow-md p-5 hover:shadow-xl transition-all cursor-pointer border-l-4"
+      className="bg-white rounded-xl shadow-md p-3 md:p-5 hover:shadow-xl transition-all cursor-pointer border-l-4"
       style={{ borderLeftColor: config.color }}
       whileHover={{ y: -4, scale: 1.02 }}
       onClick={() => navigate(`/activity/${activity.id}`)}
     >
       {/* 类型标签 */}
-      <div className="mb-3">
+      <div className="mb-2 md:mb-3">
         <span
-          className="px-3 py-1 text-xs font-medium rounded-full"
+          className="px-2 md:px-3 py-1 text-xs font-medium rounded-full"
           style={{ backgroundColor: `${config.color}20`, color: config.color }}
         >
           {config.icon} {getActivityTypeLabel(activity.type, t)}
@@ -271,22 +305,22 @@ function ActivityCard({ activity, config, date, language, t }: {
       </div>
 
       {/* 标题 */}
-      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+      <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2 line-clamp-2">
         {getTitle(activity, language)}
       </h3>
 
       {/* 描述 */}
-      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+      <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 line-clamp-2">
         {getDescription(activity, language)}
       </p>
 
       {/* 照片缩略图 */}
       {activity.photos.length > 0 && (
-        <div className="flex gap-2 mb-3">
+        <div className="flex gap-1.5 md:gap-2 mb-2 md:mb-3">
           {activity.photos.slice(0, 3).map((photo, index) => (
             <div
               key={photo.id}
-              className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shadow-sm"
+              className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden bg-gray-100 shadow-sm"
             >
               <img
                 src={sanitizeImageUrl(photo.url)}
@@ -296,8 +330,8 @@ function ActivityCard({ activity, config, date, language, t }: {
             </div>
           ))}
           {activity.photos.length > 3 && (
-            <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shadow-sm">
-              <span className="text-sm text-gray-500">+{activity.photos.length - 3}</span>
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-gray-100 flex items-center justify-center shadow-sm">
+              <span className="text-xs md:text-sm text-gray-500">+{activity.photos.length - 3}</span>
             </div>
           )}
         </div>
@@ -305,11 +339,11 @@ function ActivityCard({ activity, config, date, language, t }: {
 
       {/* 标签 */}
       {getTags(activity, language).length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5 md:gap-2">
           {getTags(activity, language).slice(0, 3).map(tag => (
             <span
               key={tag}
-              className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+              className="px-1.5 md:px-2 py-0.5 md:py-1 bg-gray-100 text-gray-600 text-xs rounded"
             >
               #{tag}
             </span>

@@ -1,8 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DataProvider } from '@/contexts/DataContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { EditModeProvider, useEditMode } from '@/contexts/EditModeContext';
 import { Header } from '@/components/layout/Header';
+import { ErrorBoundary } from '@/components/common';
 import Home from '@/pages/Home';
 import ExperiencesPage from '@/pages/ExperiencesPage';
 import QuestionsPage from '@/pages/QuestionsPage';
@@ -29,32 +31,47 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// 编辑路由守卫组件 - 未开启编辑模式时重定向到首页
+function EditRoute({ children }: { children: React.ReactNode }) {
+  const { isEditMode } = useEditMode();
+  
+  if (!isEditMode) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
-    <LanguageProvider>
-      <DataProvider>
-        <ToastProvider>
-          <Router basename="/personal-growth-timeline">
-            <Layout>
-              <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/experiences" element={<ExperiencesPage />} />
-              <Route path="/questions" element={<QuestionsPage />} />
-              <Route path="/reflection" element={<ReflectionPage />} />
-              <Route path="/activity/:id" element={<ActivityDetailPage />} />
-              <Route path="/activity/create" element={<CreateActivityPage />} />
-              <Route path="/activity/edit/:id" element={<EditActivityPage />} />
-              <Route path="/question/create" element={<CreateQuestionPage />} />
-              <Route path="/question/edit/:id" element={<EditQuestionPage />} />
-              <Route path="/reflection/create" element={<CreateReflectionPage />} />
-              <Route path="/reflection/edit/:id" element={<EditReflectionPage />} />
-              <Route path="/timeline" element={<TimelinePage />} />
-              <Route path="/stats" element={<StatsPage />} />
-            </Routes>
-          </Layout>
-        </Router>
-      </ToastProvider>
-    </DataProvider>
-  </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <DataProvider>
+          <ToastProvider>
+            <EditModeProvider>
+              <Router basename="/personal-growth-timeline">
+                <Layout>
+                  <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/experiences" element={<ExperiencesPage />} />
+                  <Route path="/questions" element={<QuestionsPage />} />
+                  <Route path="/reflection" element={<ReflectionPage />} />
+                  <Route path="/activity/:id" element={<ActivityDetailPage />} />
+                  <Route path="/activity/create" element={<EditRoute><CreateActivityPage /></EditRoute>} />
+                  <Route path="/activity/edit/:id" element={<EditRoute><EditActivityPage /></EditRoute>} />
+                  <Route path="/question/create" element={<EditRoute><CreateQuestionPage /></EditRoute>} />
+                  <Route path="/question/edit/:id" element={<EditRoute><EditQuestionPage /></EditRoute>} />
+                  <Route path="/reflection/create" element={<EditRoute><CreateReflectionPage /></EditRoute>} />
+                  <Route path="/reflection/edit/:id" element={<EditRoute><EditReflectionPage /></EditRoute>} />
+                  <Route path="/timeline" element={<TimelinePage />} />
+                  <Route path="/stats" element={<StatsPage />} />
+                </Routes>
+              </Layout>
+            </Router>
+          </EditModeProvider>
+        </ToastProvider>
+      </DataProvider>
+    </LanguageProvider>
+    </ErrorBoundary>
   );
 }

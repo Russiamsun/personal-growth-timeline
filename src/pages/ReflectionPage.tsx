@@ -4,6 +4,7 @@ import { Calendar, BookOpen, Feather, Plus, Edit, Trash2 } from 'lucide-react';
 import { Reflection, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useEditMode } from '@/contexts/EditModeContext';
 import { ConfirmDialog, useConfirmDialog } from '@/components/common/ConfirmDialog';
 import { getTags } from '@/utils/bilingualHelpers';
 import { formatDateByLang } from '@/utils/dateUtils';
@@ -22,6 +23,7 @@ export default function ReflectionPage() {
   const navigate = useNavigate();
   const { reflections, deleteReflection } = useData();
   const { language, t } = useLanguage();
+  const { isEditMode } = useEditMode();
   const { confirm, dialogProps } = useConfirmDialog();
 
   // 按日期降序排序（最新的在前）
@@ -77,15 +79,17 @@ export default function ReflectionPage() {
                 {t.nav.reflection}
               </h1>
             </div>
-            <motion.button
-              onClick={() => navigate('/reflection/create')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Plus className="w-5 h-5" />
-              <span>{t.reflection.createNew}</span>
-            </motion.button>
+            {isEditMode && (
+              <motion.button
+                onClick={() => navigate('/reflection/create')}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Plus className="w-5 h-5" />
+                <span>{t.reflection.createNew}</span>
+              </motion.button>
+            )}
           </div>
           <p className="text-gray-600 text-lg">
             {t.reflection.subtitle}
@@ -162,32 +166,34 @@ export default function ReflectionPage() {
                     )}
                   </div>
 
-                  {/* 操作按钮 */}
-                  <div className="flex items-center justify-end gap-2 mt-6 ml-8">
-                    <motion.button
-                      onClick={() => navigate(`/reflection/edit/${reflection.id}`)}
-                      className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>{t.reflection.edit}</span>
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleDelete(reflection.id, reflection);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium cursor-pointer"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Trash2 className="w-4 h-4 pointer-events-none" />
-                      <span className="pointer-events-none">{t.reflection.delete}</span>
-                    </motion.button>
-                  </div>
+                  {/* 操作按钮 - 仅编辑模式显示 */}
+                  {isEditMode && (
+                    <div className="flex items-center justify-end gap-2 mt-6 ml-8">
+                      <motion.button
+                        onClick={() => navigate(`/reflection/edit/${reflection.id}`)}
+                        className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>{t.reflection.edit}</span>
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleDelete(reflection.id, reflection);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium cursor-pointer"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Trash2 className="w-4 h-4 pointer-events-none" />
+                        <span className="pointer-events-none">{t.reflection.delete}</span>
+                      </motion.button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 底部书页边缘 */}

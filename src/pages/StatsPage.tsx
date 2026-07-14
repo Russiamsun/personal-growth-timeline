@@ -161,14 +161,14 @@ export default function StatsPage() {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="text-center"
           >
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Sparkles className="w-10 h-10 text-yellow-300" />
-              <h1 className="text-3xl md:text-5xl font-bold text-white">
+            <div className="flex items-center justify-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <Sparkles className="w-7 h-7 md:w-10 md:h-10 text-yellow-300" />
+              <h1 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white">
                 {language === 'zh' ? '统计概览' : 'Statistics Overview'}
               </h1>
-              <Sparkles className="w-10 h-10 text-yellow-300" />
+              <Sparkles className="w-7 h-7 md:w-10 md:h-10 text-yellow-300" />
             </div>
-            <p className="text-white/90 text-lg md:text-xl">
+            <p className="text-white/90 text-sm md:text-lg lg:text-xl">
               {language === 'zh' ? '数据洞察与成长轨迹' : 'Data Insights and Growth Trajectory'}
             </p>
           </motion.div>
@@ -179,21 +179,21 @@ export default function StatsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {/* 总览卡片 */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg">
-                <Activity className="w-6 h-6 text-white" />
+          <div className="bg-white rounded-xl shadow-lg p-3 md:p-6 border border-gray-100">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="p-2 md:p-3 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg">
+                <Activity className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-xs md:text-sm">
                   {language === 'zh' ? '活动总数' : 'Total Activities'}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">{statsData.totalActivities}</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{statsData.totalActivities}</p>
               </div>
             </div>
           </div>

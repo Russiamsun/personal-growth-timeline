@@ -5,3 +5,4 @@ export { ConfirmDialog, useConfirmDialog } from './ConfirmDialog';
 export type { ConfirmType } from './ConfirmDialog';
 export { ActivityFilter } from './ActivityFilter';
 export type { FilterOptions } from './ActivityFilter';
+export { default as ErrorBoundary } from './ErrorBoundary';
