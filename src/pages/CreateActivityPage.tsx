@@ -13,7 +13,7 @@ import { BilingualInputField, InputModeSelector, TextInput } from '@/components/
 export default function CreateActivityPage() {
   const navigate = useNavigate();
   const { addActivity } = useData();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { errors, validate, clearError } = useFormValidation();
   const { inputMode, setInputMode } = useBilingualForm();
@@ -285,6 +285,7 @@ export default function CreateActivityPage() {
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
               colorScheme="orange"
+              placeholder={language === 'zh' ? '多个标签用逗号分隔' : 'Separate tags with commas'}
             />
 
             {/* 照片管理 */}

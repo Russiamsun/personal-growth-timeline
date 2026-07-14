@@ -5,7 +5,7 @@ import { Activity, ActivityTypeConfig, ActivityType, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { createSafeHtml, sanitizeImageUrl } from '@/utils/sanitize';
-import { getTitle, getDescription, getLocation, getContent, getTags, getActivityTypeLabel, getTitleAsync, getDescriptionAsync, getContentAsync, getLocationAsync } from '@/utils/bilingualHelpers';
+import { getTitle, getDescription, getLocation, getContent, getTags, getActivityTypeLabel, getTitleAsync, getDescriptionAsync, getContentAsync, getLocationAsync, getTagsAsync } from '@/utils/bilingualHelpers';
 import { formatDateByLang } from '@/utils/dateUtils';
 import { useState, useEffect } from 'react';
 
@@ -20,6 +20,7 @@ export default function ActivityDetailPage() {
   const [translatedDescription, setTranslatedDescription] = useState('');
   const [translatedContent, setTranslatedContent] = useState('');
   const [translatedLocation, setTranslatedLocation] = useState('');
+  const [translatedTags, setTranslatedTags] = useState<string[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
 
   const activity = activities.find(a => a.id === id);
@@ -32,17 +33,19 @@ export default function ActivityDetailPage() {
       setIsTranslating(true);
       try {
         // 并行翻译所有字段
-        const [title, description, content, location] = await Promise.all([
+        const [title, description, content, location, tags] = await Promise.all([
           getTitleAsync(activity, language),
           getDescriptionAsync(activity, language),
           getContentAsync(activity, language),
           getLocationAsync(activity, language),
+          getTagsAsync(activity, language),
         ]);
-        
+
         setTranslatedTitle(title);
         setTranslatedDescription(description);
         setTranslatedContent(content);
         setTranslatedLocation(location);
+        setTranslatedTags(tags);
       } catch (error) {
         console.error('翻译失败:', error);
         // 翻译失败时使用原始值
@@ -50,6 +53,7 @@ export default function ActivityDetailPage() {
         setTranslatedDescription(getDescription(activity, language));
         setTranslatedContent(getContent(activity, language));
         setTranslatedLocation(getLocation(activity, language));
+        setTranslatedTags(getTags(activity, language));
       } finally {
         setIsTranslating(false);
       }
@@ -161,7 +165,7 @@ export default function ActivityDetailPage() {
 
               {/* 标签 */}
               <div className="flex flex-wrap gap-2 mb-8">
-                {getTags(activity, language).map((tag, tagIndex) => (
+                {(translatedTags.length > 0 ? translatedTags : getTags(activity, language)).map((tag, tagIndex) => (
                   <motion.span
                     key={tag}
                     initial={{ opacity: 0, scale: 0.8 }}

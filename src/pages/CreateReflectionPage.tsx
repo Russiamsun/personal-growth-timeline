@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Calendar, Tag, BookOpen, Feather } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Calendar, Tag, BookOpen, Feather, Loader2 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useBilingualForm, InputMode } from '@/hooks/useBilingualForm';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { InputModeSelector, BilingualInputField, TextInput } from '@/components/forms/FormFields';
+import { translateText } from '@/utils/translate';
 
 export default function CreateReflectionPage() {
   const navigate = useNavigate();
   const { addReflection } = useData();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { inputMode, setInputMode } = useBilingualForm('both');
   const { errors, validate, clearError } = useFormValidation();
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const [formData, setFormData] = useState({
     contentZh: '',
@@ -84,6 +86,24 @@ export default function CreateReflectionPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       clearError(field);
+    }
+  };
+
+  // 处理反思内容翻译
+  const handleTranslateContent = async (from: 'zh' | 'en') => {
+    const text = from === 'zh' ? formData.contentZh : formData.contentEn;
+    if (!text.trim()) return;
+
+    setIsTranslating(true);
+    try {
+      const translated = await translateText(text, from, from === 'zh' ? 'en' : 'zh');
+      if (from === 'zh') {
+        handleChange('contentEn', translated);
+      } else {
+        handleChange('contentZh', translated);
+      }
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -164,10 +184,28 @@ export default function CreateReflectionPage() {
                     <div className="absolute -top-3 -left-3 text-5xl text-green-200 font-serif">
                       "
                     </div>
-                    <label className="block text-xs text-gray-500 mb-1 ml-6">{t.form.reflectionContentZh}</label>
+                    <div className="flex items-center justify-between mb-1 ml-6">
+                      <label className="text-xs text-gray-500">{t.form.reflectionContentZh}</label>
+                      {formData.contentZh && !formData.contentEn && (
+                        <button
+                          type="button"
+                          onClick={() => handleTranslateContent('zh')}
+                          disabled={isTranslating}
+                          className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+                        >
+                          {isTranslating ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <span>🌐</span>
+                          )}
+                          <span>翻译成英文</span>
+                        </button>
+                      )}
+                    </div>
                     <textarea
                       value={formData.contentZh}
                       onChange={(e) => handleChange('contentZh', e.target.value)}
+                      placeholder={language === 'zh' ? '在这里写下你的感悟和思考...' : 'Write your reflections and thoughts here...'}
                       rows={8}
                       className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 resize-none relative pl-6 pt-2 font-serif italic ${
                         errors.content ? 'border-red-500' : 'border-gray-200 hover:border-green-300'
@@ -178,10 +216,28 @@ export default function CreateReflectionPage() {
                     </div>
                   </div>
                   <div className="relative">
-                    <label className="block text-xs text-gray-500 mb-1">{t.form.reflectionContentEn}</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-gray-500">{t.form.reflectionContentEn}</label>
+                      {formData.contentEn && !formData.contentZh && (
+                        <button
+                          type="button"
+                          onClick={() => handleTranslateContent('en')}
+                          disabled={isTranslating}
+                          className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+                        >
+                          {isTranslating ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <span>🌐</span>
+                          )}
+                          <span>翻译成中文</span>
+                        </button>
+                      )}
+                    </div>
                     <textarea
                       value={formData.contentEn}
                       onChange={(e) => handleChange('contentEn', e.target.value)}
+                      placeholder={language === 'en' ? 'Write your reflections and thoughts here...' : '在这里写下你的感悟和思考...'}
                       rows={8}
                       className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 resize-none ${
                         errors.content ? 'border-red-500' : 'border-gray-200 hover:border-green-300'
@@ -197,6 +253,7 @@ export default function CreateReflectionPage() {
                   <textarea
                     value={formData.contentZh}
                     onChange={(e) => handleChange('contentZh', e.target.value)}
+                    placeholder="在这里写下你的感悟和思考..."
                     rows={8}
                     className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 resize-none relative pl-6 pt-2 font-serif italic ${
                       errors.content ? 'border-red-500' : 'border-gray-200 hover:border-green-300'
@@ -205,16 +262,49 @@ export default function CreateReflectionPage() {
                   <div className="absolute -bottom-3 -right-3 text-5xl text-green-200 font-serif text-right">
                     "
                   </div>
+                  {formData.contentZh && (
+                    <button
+                      type="button"
+                      onClick={() => handleTranslateContent('zh')}
+                      disabled={isTranslating}
+                      className="mt-2 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                    >
+                      {isTranslating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <span>🌐</span>
+                      )}
+                      <span>自动翻译成英文</span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <textarea
-                  value={formData.contentEn}
-                  onChange={(e) => handleChange('contentEn', e.target.value)}
-                  rows={8}
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 resize-none ${
-                    errors.content ? 'border-red-500' : 'border-gray-200 hover:border-green-300'
-                  }`}
-                />
+                <div>
+                  <textarea
+                    value={formData.contentEn}
+                    onChange={(e) => handleChange('contentEn', e.target.value)}
+                    placeholder="Write your reflections and thoughts here..."
+                    rows={8}
+                    className={`w-full px-4 py-3 rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 resize-none ${
+                      errors.content ? 'border-red-500' : 'border-gray-200 hover:border-green-300'
+                    }`}
+                  />
+                  {formData.contentEn && (
+                    <button
+                      type="button"
+                      onClick={() => handleTranslateContent('en')}
+                      disabled={isTranslating}
+                      className="mt-2 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                    >
+                      {isTranslating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <span>🌐</span>
+                      )}
+                      <span>自动翻译成中文</span>
+                    </button>
+                  )}
+                </div>
               )}
               {errors.content && (
                 <p className="text-red-500 text-sm mt-1 ml-6">{errors.content}</p>
@@ -248,6 +338,7 @@ export default function CreateReflectionPage() {
               inputMode={inputMode}
               type="text"
               colorScheme="green"
+              showTranslate
             />
 
             {/* 提交按钮 */}

@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, BookOpen, Feather, Plus, Edit, Trash2 } from 'lucide-react';
+import { Calendar, BookOpen, Feather, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Reflection, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useEditMode } from '@/contexts/EditModeContext';
 import { ConfirmDialog, useConfirmDialog } from '@/components/common/ConfirmDialog';
-import { getTags } from '@/utils/bilingualHelpers';
+import { getTags, getReflectionContentAsync } from '@/utils/bilingualHelpers';
 import { formatDateByLang } from '@/utils/dateUtils';
+import { useState, useEffect } from 'react';
 
 // 辅助函数：根据语言获取双语言字段
 const getReflectionContent = (reflection: Reflection, lang: Language) => {
@@ -26,10 +27,53 @@ export default function ReflectionPage() {
   const { isEditMode } = useEditMode();
   const { confirm, dialogProps } = useConfirmDialog();
 
+  // 翻译状态
+  const [translatedContents, setTranslatedContents] = useState<Map<string, string>>(new Map());
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+
   // 按日期降序排序（最新的在前）
   const sortedReflections = [...reflections].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+
+  // 当语言或反思列表变化时，自动翻译缺失的内容
+  useEffect(() => {
+    const translateContents = async () => {
+      // 并行翻译所有反思的内容
+      const translations = await Promise.all(
+        sortedReflections.map(async (reflection) => {
+          // 检查是否需要翻译
+          const zhContent = reflection.contentZh || '';
+          const enContent = reflection.contentEn || '';
+          const needsTranslation = (language === 'zh' && !zhContent && enContent) ||
+                                   (language === 'en' && !enContent && zhContent);
+
+          if (needsTranslation) {
+            setTranslatingIds(prev => new Set(prev).add(reflection.id));
+            const translated = await getReflectionContentAsync(reflection, language);
+            setTranslatingIds(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(reflection.id);
+              return newSet;
+            });
+            return { id: reflection.id, content: translated };
+          } else {
+            // 不需要翻译，直接返回原内容
+            return { id: reflection.id, content: getReflectionContent(reflection, language) };
+          }
+        })
+      );
+
+      // 更新翻译内容映射
+      const newMap = new Map<string, string>();
+      translations.forEach(({ id, content }) => {
+        newMap.set(id, content);
+      });
+      setTranslatedContents(newMap);
+    };
+
+    translateContents();
+  }, [language, sortedReflections]);
 
   const handleDelete = async (id: string, reflection: Reflection) => {
     const content = getReflectionContent(reflection, language);
@@ -131,9 +175,14 @@ export default function ReflectionPage() {
                       <div className="absolute -top-3 -left-3 text-5xl text-green-200 font-serif">
                         "
                       </div>
-                      <p className="text-gray-800 text-lg md:text-xl leading-relaxed relative z-10 pl-6 pt-2 font-serif italic">
-                        {getReflectionContent(reflection, language)}
-                      </p>
+                      <div className="flex items-center gap-2 pl-6 pt-2">
+                        <p className="text-gray-800 text-lg md:text-xl leading-relaxed relative z-10 font-serif italic">
+                          {translatedContents.get(reflection.id) || getReflectionContent(reflection, language)}
+                        </p>
+                        {translatingIds.has(reflection.id) && (
+                          <Loader2 className="w-5 h-5 text-green-500 animate-spin flex-shrink-0" />
+                        )}
+                      </div>
                       <div className="absolute -bottom-3 -right-3 text-5xl text-green-200 font-serif text-right">
                         "
                       </div>

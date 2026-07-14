@@ -1,4 +1,4 @@
-import { Activity, ActivityType, ActivityTypeConfig, Language } from '@/types';
+import { Activity, ActivityType, ActivityTypeConfig, Reflection, Question, Language } from '@/types';
 import { TranslationStrings } from '@/contexts/LanguageContext';
 import { translateText } from '@/utils/translate';
 
@@ -165,6 +165,37 @@ export function getTags(entity: { tagsZh?: string[]; tagsEn?: string[] }, lang: 
 }
 
 /**
+ * 异步获取标签数组（支持自动翻译）
+ * @param entity - 包含tagsZh和tagsEn的实体对象
+ * @param lang - 语言类型
+ * @returns 标签数组
+ */
+export async function getTagsAsync(entity: { tagsZh?: string[]; tagsEn?: string[] }, lang: Language): Promise<string[]> {
+  const zhTags = entity.tagsZh || [];
+  const enTags = entity.tagsEn || [];
+
+  if (lang === 'zh') {
+    if (zhTags.length > 0) return zhTags;
+    if (enTags.length > 0) {
+      // 将英文标签用逗号连接成字符串，翻译后再拆分
+      const tagsString = enTags.join(',');
+      const translated = await translateText(tagsString, 'en', 'zh');
+      return translated.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
+    return [];
+  } else {
+    if (enTags.length > 0) return enTags;
+    if (zhTags.length > 0) {
+      // 将中文标签用逗号连接成字符串，翻译后再拆分
+      const tagsString = zhTags.join(',');
+      const translated = await translateText(tagsString, 'zh', 'en');
+      return translated.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
+    return [];
+  }
+}
+
+/**
  * 根据语言获取活动类型的显示标签
  * @param type - 活动类型
  * @param t - 翻译对象
@@ -179,4 +210,74 @@ export function getActivityTypeLabel(type: ActivityType, t: TranslationStrings):
     'social-observation': t.activityTypes['social-observation'],
   };
   return typeLabels[type] || ActivityTypeConfig[type].label;
+}
+
+/**
+ * 异步获取反思内容（支持自动翻译）
+ */
+export async function getReflectionContentAsync(reflection: Reflection, lang: Language): Promise<string> {
+  const zhContent = reflection.contentZh || '';
+  const enContent = reflection.contentEn || '';
+
+  if (lang === 'zh') {
+    if (zhContent) return zhContent;
+    if (enContent) {
+      return await translateText(enContent, 'en', 'zh');
+    }
+    return '';
+  } else {
+    if (enContent) return enContent;
+    if (zhContent) {
+      return await translateText(zhContent, 'zh', 'en');
+    }
+    return '';
+  }
+}
+
+/**
+ * ==================== Question 相关函数 ====================
+ */
+
+/**
+ * 异步获取问题文本（支持自动翻译）
+ */
+export async function getQuestionTextAsync(question: Question, lang: Language): Promise<string> {
+  const zhText = question.questionZh || '';
+  const enText = question.questionEn || '';
+
+  if (lang === 'zh') {
+    if (zhText) return zhText;
+    if (enText) {
+      return await translateText(enText, 'en', 'zh');
+    }
+    return '无问题';
+  } else {
+    if (enText) return enText;
+    if (zhText) {
+      return await translateText(zhText, 'zh', 'en');
+    }
+    return 'No Question';
+  }
+}
+
+/**
+ * 异步获取思考内容（支持自动翻译）
+ */
+export async function getThoughtsAsync(question: Question, lang: Language): Promise<string> {
+  const zhThoughts = question.thoughtsZh || '';
+  const enThoughts = question.thoughtsEn || '';
+
+  if (lang === 'zh') {
+    if (zhThoughts) return zhThoughts;
+    if (enThoughts) {
+      return await translateText(enThoughts, 'en', 'zh');
+    }
+    return '';
+  } else {
+    if (enThoughts) return enThoughts;
+    if (zhThoughts) {
+      return await translateText(zhThoughts, 'zh', 'en');
+    }
+    return '';
+  }
 }

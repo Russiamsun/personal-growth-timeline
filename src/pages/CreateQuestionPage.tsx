@@ -159,6 +159,7 @@ export default function CreateQuestionPage() {
               error={errors.question}
               required
               colorScheme="violet"
+              showTranslate
             />
 
             {/* 思考内容 */}
@@ -174,6 +175,7 @@ export default function CreateQuestionPage() {
               type="textarea"
               rows={6}
               colorScheme="violet"
+              showTranslate
             />
 
             {/* 日期 */}
@@ -203,6 +205,7 @@ export default function CreateQuestionPage() {
               inputMode={inputMode}
               type="text"
               colorScheme="violet"
+              showTranslate
             />
 
             {/* 提交按钮 */}

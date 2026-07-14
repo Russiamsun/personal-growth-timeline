@@ -1,12 +1,13 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Sparkles, Plus, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Sparkles, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Question, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useEditMode } from '@/contexts/EditModeContext';
 import { ConfirmDialog, useConfirmDialog } from '@/components/common/ConfirmDialog';
-import { getTags } from '@/utils/bilingualHelpers';
+import { getTags, getQuestionTextAsync, getThoughtsAsync } from '@/utils/bilingualHelpers';
 import { formatDateByLang } from '@/utils/dateUtils';
 
 // 辅助函数：根据语言获取双语言字段
@@ -35,10 +36,63 @@ export default function QuestionsPage() {
   const { isEditMode } = useEditMode();
   const { confirm, dialogProps } = useConfirmDialog();
 
+  // 翻译状态管理
+  const [translatedQuestions, setTranslatedQuestions] = useState<Record<string, { question: string; thoughts: string }>>({});
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+
   // 按日期降序排序（最新的在前）
   const sortedQuestions = [...questions].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+
+  // 当语言变化时，自动翻译所有问题
+  useEffect(() => {
+    const translateAllQuestions = async () => {
+      const newTranslatedQuestions: Record<string, { question: string; thoughts: string }> = {};
+      const idsToTranslate = new Set<string>();
+
+      // 标记正在翻译的问题
+      sortedQuestions.forEach(q => {
+        idsToTranslate.add(q.id);
+      });
+      setTranslatingIds(idsToTranslate);
+
+      // 并行翻译所有问题
+      await Promise.all(
+        sortedQuestions.map(async (question) => {
+          try {
+            const [translatedQuestion, translatedThoughts] = await Promise.all([
+              getQuestionTextAsync(question, language),
+              getThoughtsAsync(question, language),
+            ]);
+            newTranslatedQuestions[question.id] = {
+              question: translatedQuestion,
+              thoughts: translatedThoughts,
+            };
+          } catch (error) {
+            console.error('翻译失败:', error);
+            // 翻译失败时使用原始值
+            newTranslatedQuestions[question.id] = {
+              question: getQuestionText(question, language),
+              thoughts: getThoughts(question, language),
+            };
+          } finally {
+            setTranslatingIds(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(question.id);
+              return newSet;
+            });
+          }
+        })
+      );
+
+      setTranslatedQuestions(newTranslatedQuestions);
+    };
+
+    if (sortedQuestions.length > 0) {
+      translateAllQuestions();
+    }
+  }, [language, sortedQuestions.length]);
 
   const handleDelete = async (id: string, question: Question) => {
     const questionText = getQuestionText(question, language);
@@ -130,9 +184,14 @@ export default function QuestionsPage() {
                       <Sparkles className="w-6 h-6 text-white" />
                     </motion.div>
                     <div className="flex-1">
-                      <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-2 leading-tight">
-                        {getQuestionText(question, language)}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-2 leading-tight">
+                          {translatedQuestions[question.id]?.question || getQuestionText(question, language)}
+                        </h2>
+                        {translatingIds.has(question.id) && (
+                          <Loader2 className="w-5 h-5 text-violet-500 animate-spin mb-2" />
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <div className="flex items-center gap-1 bg-violet-50 px-3 py-1.5 rounded-lg">
                           <Calendar className="w-4 h-4 text-violet-500" />
@@ -157,9 +216,18 @@ export default function QuestionsPage() {
                           {language === 'zh' ? '我的思考' : 'My Thoughts'}
                         </p>
                       </div>
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                        {getThoughts(question, language)}
-                      </p>
+                      {translatingIds.has(question.id) ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                          <span className="ml-2 text-gray-500">
+                            {language === 'zh' ? '正在翻译...' : 'Translating...'}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                          {translatedQuestions[question.id]?.thoughts || getThoughts(question, language)}
+                        </p>
+                      )}
                     </motion.div>
                   )}
 

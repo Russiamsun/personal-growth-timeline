@@ -151,6 +151,7 @@ interface BilingualInputFieldProps {
   inputMode: InputMode;
   type?: 'text' | 'textarea';
   rows?: number;
+  placeholder?: string; // placeholder 提示
   error?: string;
   required?: boolean;
   colorScheme?: 'orange' | 'violet' | 'green';
@@ -174,6 +175,7 @@ export function BilingualInputField({
   inputMode,
   type = 'text',
   rows = 4,
+  placeholder,
   error,
   required = false,
   colorScheme = 'orange',
@@ -194,13 +196,14 @@ export function BilingualInputField({
     error ? 'border-red-500' : 'border-gray-200'
   }`;
 
-  const renderInput = (value: string, onChange: (v: string) => void, placeholder: string) => {
+  const renderInput = (value: string, onChange: (v: string) => void, labelPlaceholder: string) => {
+    const actualPlaceholder = placeholder || labelPlaceholder;
     if (type === 'textarea') {
       return (
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={actualPlaceholder}
           rows={rows}
           className={`${inputClass} resize-none`}
         />
@@ -211,7 +214,7 @@ export function BilingualInputField({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={actualPlaceholder}
         className={inputClass}
       />
     );
