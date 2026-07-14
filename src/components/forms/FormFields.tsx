@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { InputMode } from '@/hooks/useBilingualForm';
+import { translateText, detectLanguage } from '@/utils/translate';
+import { Languages, Loader2 } from 'lucide-react';
 
 /**
  * 基础表单字段组件Props
@@ -152,12 +154,14 @@ interface BilingualInputFieldProps {
   error?: string;
   required?: boolean;
   colorScheme?: 'orange' | 'violet' | 'green';
+  showTranslate?: boolean; // 是否显示翻译按钮
 }
 
 /**
  * 双语输入字段组件
  * 
  * 根据inputMode自动显示对应的输入框
+ * 支持自动翻译功能
  */
 export function BilingualInputField({
   label,
@@ -173,7 +177,9 @@ export function BilingualInputField({
   error,
   required = false,
   colorScheme = 'orange',
+  showTranslate = false,
 }: BilingualInputFieldProps) {
+  const [isTranslating, setIsTranslating] = useState(false);
   const showBoth = inputMode === 'both';
   const showZh = inputMode === 'zh' || showBoth;
   const showEn = inputMode === 'en' || showBoth;
@@ -211,23 +217,112 @@ export function BilingualInputField({
     );
   };
 
+  // 处理翻译
+  const handleTranslate = async (from: 'zh' | 'en') => {
+    const text = from === 'zh' ? valueZh : valueEn;
+    if (!text.trim()) return;
+
+    setIsTranslating(true);
+    try {
+      const translated = await translateText(text, from, from === 'zh' ? 'en' : 'zh');
+      if (from === 'zh') {
+        onChangeEn(translated);
+      } else {
+        onChangeZh(translated);
+      }
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   return (
     <FormField label={label} error={error} required={required} colorScheme={colorScheme}>
       {showBoth ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
+          {/* 中文输入 */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{labelZh}</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-gray-500">{labelZh}</label>
+              {showTranslate && valueZh && !valueEn && (
+                <button
+                  type="button"
+                  onClick={() => handleTranslate('zh')}
+                  disabled={isTranslating}
+                  className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  {isTranslating ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Languages className="w-3 h-3" />
+                  )}
+                  <span>翻译成英文</span>
+                </button>
+              )}
+            </div>
             {renderInput(valueZh, onChangeZh, labelZh)}
           </div>
+
+          {/* 英文输入 */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{labelEn}</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-gray-500">{labelEn}</label>
+              {showTranslate && valueEn && !valueZh && (
+                <button
+                  type="button"
+                  onClick={() => handleTranslate('en')}
+                  disabled={isTranslating}
+                  className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  {isTranslating ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Languages className="w-3 h-3" />
+                  )}
+                  <span>翻译成中文</span>
+                </button>
+              )}
+            </div>
             {renderInput(valueEn, onChangeEn, labelEn)}
           </div>
         </div>
       ) : showZh ? (
-        renderInput(valueZh, onChangeZh, labelZh)
+        <div>
+          {renderInput(valueZh, onChangeZh, labelZh)}
+          {showTranslate && valueZh && (
+            <button
+              type="button"
+              onClick={() => handleTranslate('zh')}
+              disabled={isTranslating}
+              className="mt-2 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              {isTranslating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Languages className="w-4 h-4" />
+              )}
+              <span>自动翻译成英文</span>
+            </button>
+          )}
+        </div>
       ) : (
-        renderInput(valueEn, onChangeEn, labelEn)
+        <div>
+          {renderInput(valueEn, onChangeEn, labelEn)}
+          {showTranslate && valueEn && (
+            <button
+              type="button"
+              onClick={() => handleTranslate('en')}
+              disabled={isTranslating}
+              className="mt-2 flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              {isTranslating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Languages className="w-4 h-4" />
+              )}
+              <span>自动翻译成中文</span>
+            </button>
+          )}
+        </div>
       )}
     </FormField>
   );

@@ -208,6 +208,7 @@ export default function CreateActivityPage() {
               error={errors.title}
               required
               colorScheme="orange"
+              showTranslate
             />
 
             {/* 描述 */}
@@ -223,6 +224,7 @@ export default function CreateActivityPage() {
               error={errors.description}
               required
               colorScheme="orange"
+              showTranslate
             />
 
             {/* 内容 */}
@@ -240,6 +242,7 @@ export default function CreateActivityPage() {
               error={errors.content}
               required
               colorScheme="orange"
+              showTranslate
             />
 
             {/* 日期和地点 */}
