@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Calendar, MapPin, Tag, FileText, Sparkles, Image } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Calendar, MapPin, Tag, FileText, Sparkles, Image, Video } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ActivityType, ActivityTypeConfig, Photo } from '@/types';
+import { ActivityType, ActivityTypeConfig, Photo, Video as VideoType } from '@/types';
 import PhotoUploader from '@/components/PhotoUploader';
+import VideoUploader from '@/components/VideoUploader';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useBilingualForm } from '@/hooks/useBilingualForm';
 import { BilingualInputField, InputModeSelector, TextInput } from '@/components/forms/FormFields';
@@ -33,6 +34,7 @@ export default function CreateActivityPage() {
     tagsZh: '',
     tagsEn: '',
     photos: [] as Photo[],
+    videos: [] as VideoType[],
   });
 
   const validationRules = {
@@ -92,6 +94,7 @@ export default function CreateActivityPage() {
         locationZh: formData.locationZh.trim() || undefined,
         locationEn: formData.locationEn.trim() || undefined,
         photos: formData.photos,
+        videos: formData.videos.length > 0 ? formData.videos : undefined,
         tagsZh,
         tagsEn,
       });
@@ -279,7 +282,7 @@ export default function CreateActivityPage() {
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
               colorScheme="orange"
-              placeholder={language === 'zh' ? '多个标签用逗号分隔（中英文均可）' : 'Separate tags with commas'}
+              placeholder={language === 'zh' ? '多个标签用逗号分隔' : 'Separate tags with commas'}
             />
 
             {/* 照片管理 */}
@@ -291,6 +294,18 @@ export default function CreateActivityPage() {
               <PhotoUploader
                 photos={formData.photos}
                 onChange={(photos) => setFormData({ ...formData, photos })}
+              />
+            </div>
+
+            {/* 视频管理 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Video className="w-4 h-4 inline mr-2 text-purple-500" />
+                {t.form.videos}
+              </label>
+              <VideoUploader
+                videos={formData.videos}
+                onChange={(videos) => setFormData({ ...formData, videos })}
               />
             </div>
 

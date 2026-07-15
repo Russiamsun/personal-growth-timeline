@@ -198,7 +198,7 @@ export default function CreateQuestionPage() {
               onChangeEn={(value) => handleChange('tagsEn', value)}
               inputMode={inputMode}
               type="text"
-              placeholder={language === 'zh' ? '多个标签用逗号分隔（中英文均可）' : 'Separate tags with commas'}
+              placeholder={language === 'zh' ? '多个标签用逗号分隔' : 'Separate tags with commas'}
               colorScheme="violet"
               showTranslate
             />

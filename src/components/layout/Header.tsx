@@ -122,7 +122,7 @@ export function Header() {
               {/* 按钮内容 */}
               <div className="relative flex items-center gap-2 z-10">
                 <Languages className="w-4 h-4" />
-                <span>{language === 'zh' ? '中' : 'EN'}</span>
+                <span>{language === 'zh' ? 'English' : '中文'}</span>
               </div>
             </motion.button>
           </div>

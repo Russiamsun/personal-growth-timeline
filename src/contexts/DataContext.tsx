@@ -65,6 +65,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       tagsZh: activity.tagsZh || activity.tags_zh || activity.tags || [],
       tagsEn: activity.tagsEn || activity.tags_en || [],
       photos: activity.photos || [],
+      videos: activity.videos || [],
       createdAt: activity.createdAt || activity.created_at || new Date().toISOString(),
       updatedAt: activity.updatedAt || activity.updated_at || new Date().toISOString(),
     };
@@ -126,6 +127,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         locationZh: item.location_zh,
         locationEn: item.location_en,
         photos: item.photos || [],
+        videos: item.videos || [],
         tagsZh: item.tags_zh || [],
         tagsEn: item.tags_en || [],
         createdAt: item.created_at,
@@ -298,6 +300,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           location_zh: newActivity.locationZh,
           location_en: newActivity.locationEn,
           photos: newActivity.photos,
+          videos: newActivity.videos,
           tags_zh: newActivity.tagsZh,
           tags_en: newActivity.tagsEn,
           created_at: newActivity.createdAt,
@@ -337,6 +340,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (updates.locationZh !== undefined) updateData.location_zh = updates.locationZh;
         if (updates.locationEn !== undefined) updateData.location_en = updates.locationEn;
         if (updates.photos) updateData.photos = updates.photos;
+        if (updates.videos !== undefined) updateData.videos = updates.videos;
         if (updates.tagsZh) updateData.tags_zh = updates.tagsZh;
         if (updates.tagsEn) updateData.tags_en = updates.tagsEn;
 

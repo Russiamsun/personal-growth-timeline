@@ -19,6 +19,7 @@ export interface Activity {
   locationZh?: string; // 中文地点（替换原 location）
   locationEn?: string; // 英文地点
   photos: Photo[];
+  videos?: Video[]; // 视频（可选）
   tagsZh: string[]; // 中文标签（替换原 tags）
   tagsEn: string[]; // 英文标签
   createdAt: string;
@@ -61,6 +62,18 @@ export interface Photo {
   caption?: string; // 照片描述/说明
   uploadedAt: string; // 上传时间
   storagePath?: string; // Storage路径（用于删除，可选）
+}
+
+// 视频类型
+export interface Video {
+  id: string;
+  url: string; // 视频路径（Storage URL或网络URL）
+  order: number; // 排序序号
+  caption?: string; // 视频描述/说明
+  uploadedAt: string; // 上传时间
+  storagePath?: string; // Storage路径（用于删除，可选）
+  duration?: number; // 视频时长（秒）
+  thumbnailUrl?: string; // 视频封面图
 }
 
 // 活动类型图标和颜色映射
