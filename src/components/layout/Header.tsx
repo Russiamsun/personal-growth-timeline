@@ -183,7 +183,7 @@ export function Header() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Languages className="w-5 h-5" />
-                  <span>{language === 'zh' ? '切换至英文' : 'Switch to Chinese'}</span>
+                  <span>{language === 'zh' ? 'English' : '中文'}</span>
                 </motion.button>
               </div>
             </motion.div>
