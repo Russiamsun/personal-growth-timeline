@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, AlertCircle, Calendar, MapPin, Tag, FileText, Sparkles, Image, Video } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle, Calendar, MapPin, Tag, FileText, Sparkles, Image } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ActivityType, ActivityTypeConfig, Photo, Video as VideoType } from '@/types';
+import { ActivityType, ActivityTypeConfig, Photo } from '@/types';
 import PhotoUploader from '@/components/PhotoUploader';
-import VideoUploader from '@/components/VideoUploader';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useBilingualForm } from '@/hooks/useBilingualForm';
 import { BilingualInputField, InputModeSelector, TextInput } from '@/components/forms/FormFields';
@@ -38,7 +37,6 @@ export default function EditActivityPage() {
     tagsZh: '',
     tagsEn: '',
     photos: [] as Photo[],
-    videos: [] as VideoType[],
   });
 
   useEffect(() => {
@@ -57,7 +55,6 @@ export default function EditActivityPage() {
         tagsZh: (activity.tagsZh || []).join(','),
         tagsEn: (activity.tagsEn || []).join(','),
         photos: activity.photos || [],
-        videos: activity.videos || [],
       });
       setIsLoading(false);
     } else {
@@ -126,7 +123,6 @@ export default function EditActivityPage() {
         locationZh: formData.locationZh.trim() || undefined,
         locationEn: formData.locationEn.trim() || undefined,
         photos: formData.photos,
-        videos: formData.videos.length > 0 ? formData.videos : undefined,
         tagsZh,
         tagsEn,
       });
@@ -359,18 +355,6 @@ export default function EditActivityPage() {
               <PhotoUploader
                 photos={formData.photos}
                 onChange={(photos) => setFormData({ ...formData, photos })}
-              />
-            </div>
-
-            {/* 视频管理 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Video className="w-4 h-4 inline mr-2 text-purple-500" />
-                {t.form.videos}
-              </label>
-              <VideoUploader
-                videos={formData.videos}
-                onChange={(videos) => setFormData({ ...formData, videos })}
               />
             </div>
 

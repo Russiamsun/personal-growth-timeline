@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Tag, ArrowLeft, Image, Video, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Tag, ArrowLeft, Image, Loader2 } from 'lucide-react';
 import { Activity, ActivityTypeConfig, ActivityType, Language } from '@/types';
 import { useData } from '@/contexts/DataContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -228,46 +228,6 @@ export default function ActivityDetailPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-orange-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
                         <p className="text-white text-sm font-medium">{photo.caption}</p>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 视频区域 */}
-            {activity.videos && activity.videos.length > 0 && (
-              <div className="px-6 md:px-10 pb-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <Video className="w-5 h-5 text-purple-500" />
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    {language === 'zh' ? '活动视频' : 'Activity Videos'}
-                  </h2>
-                  <span className="text-sm text-gray-500">({activity.videos.length})</span>
-                </div>
-
-                {/* 视频网格 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {activity.videos.map((video, videoIndex) => (
-                    <motion.div
-                      key={video.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: videoIndex * 0.1 }}
-                      className="group relative bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg overflow-hidden border-2 border-purple-200 hover:border-purple-300 transition-all"
-                    >
-                      <video
-                        src={video.url}
-                        controls
-                        className="w-full aspect-video object-cover"
-                        preload="metadata"
-                      >
-                        您的浏览器不支持视频播放
-                      </video>
-                      {video.caption && (
-                        <div className="p-3 bg-gray-50 border-t border-purple-100">
-                          <p className="text-sm text-gray-700">{video.caption}</p>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </div>

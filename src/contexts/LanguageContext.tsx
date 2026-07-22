@@ -97,7 +97,6 @@ export interface TranslationStrings {
     tagsZh: string;
     tagsEn: string;
     photos: string;
-    videos: string;
     question: string;
     questionEn: string;
     questionZh: string;
@@ -242,7 +241,6 @@ const translations: Record<Language, TranslationStrings> = {
       tagsZh: '中文标签',
       tagsEn: '英文标签',
       photos: '照片',
-      videos: '视频',
       question: '问题',
       questionEn: '英文问题',
       questionZh: '中文问题',
@@ -377,7 +375,6 @@ const translations: Record<Language, TranslationStrings> = {
       tagsZh: 'Chinese Tags',
       tagsEn: 'English Tags',
       photos: 'Photos',
-      videos: 'Videos',
       question: 'Question',
       questionEn: 'English Question',
       questionZh: 'Chinese Question',
